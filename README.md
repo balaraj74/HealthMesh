@@ -1,0 +1,228 @@
+# HealthMesh
+
+🏥 **Intelligent Clinical Decision Support Platform** powered by Azure AI
+
+A multi-agent healthcare orchestration system that provides real-time clinical decision support for complex patient cases. Built for Microsoft Imagine Cup 2025.
+
+## 🌟 Key Features
+
+- **Multi-Agent AI Architecture** - 5 specialized AI agents working in concert:
+  - 📋 Patient Context Agent - Synthesizes patient history
+  - 🔬 Labs & Reports Agent - Extracts insights from lab data
+  - 📚 Research Guidelines Agent - RAG-powered evidence-based recommendations
+  - ⚠️ Risk & Safety Agent - Identifies contraindications and drug interactions
+  - 🧠 Orchestrator Agent - Synthesizes all inputs for clinical recommendations
+
+- **Azure-Powered Backend**:
+  - Azure OpenAI (GPT-4o) for clinical reasoning
+  - Azure Health Data Services (FHIR R4) for patient data
+  - Azure Document Intelligence for lab report extraction
+  - Azure Cognitive Search for medical guidelines RAG
+  - Azure Cosmos DB for persistent storage
+  - Azure Monitor for audit trails
+
+- **Healthcare-Safe Design**:
+  - Full audit logging for compliance
+  - Structured outputs with evidence citations
+  - Clinician-in-the-loop decision making
+  - HIPAA-ready architecture
+
+## 🏗️ Tech Stack
+
+- **Frontend**: React 18, TypeScript, Tailwind CSS, Radix UI, Wouter
+- **Backend**: Express.js, TypeScript, Node.js 20
+- **AI/ML**: Azure OpenAI, Azure Cognitive Search, Azure Document Intelligence
+- **Data**: Azure Cosmos DB, Azure Health Data Services (FHIR R4)
+- **Monitoring**: Azure Application Insights, Log Analytics
+- **Infrastructure**: Bicep IaC, GitHub Actions CI/CD
+
+## 📋 Prerequisites
+
+- Node.js 20+
+- Azure subscription with the following services:
+  - Azure OpenAI (GPT-4o deployment)
+  - Azure Health Data Services
+  - Azure Cognitive Search
+  - Azure Document Intelligence
+  - Azure Cosmos DB
+  - Azure Application Insights
+
+## 🚀 Getting Started
+
+### Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Copy environment template
+cp .env.azure.example .env
+
+# Configure Azure credentials in .env
+# Then start development server
+npm run dev
+```
+
+The application will be available at `http://localhost:5000`
+
+### Azure Deployment (One-Click)
+
+```bash
+# Set deployment configuration
+export RESOURCE_GROUP="healthmesh-rg"
+export LOCATION="eastus2"
+export ENVIRONMENT="dev"
+export ADMIN_EMAIL="your-email@example.com"
+
+# Deploy to Azure
+./script/deploy-azure.sh
+```
+
+### Manual Azure Setup
+
+1. **Create Resource Group**:
+   ```bash
+   az group create --name healthmesh-rg --location eastus2
+   ```
+
+2. **Deploy Infrastructure**:
+   ```bash
+   az deployment group create \
+     --resource-group healthmesh-rg \
+     --template-file infra/main.bicep \
+     --parameters environment=dev adminEmail=you@example.com
+   ```
+
+3. **Build and Deploy**:
+   ```bash
+   npm run build
+   az webapp deployment source config-zip \
+     --resource-group healthmesh-rg \
+     --name <webapp-name> \
+     --src dist.zip
+   ```
+
+## ⚙️ Environment Variables
+
+Copy `.env.azure.example` to `.env` and configure:
+
+```env
+# Azure OpenAI
+AZURE_OPENAI_ENDPOINT=https://your-openai.openai.azure.com/
+AZURE_OPENAI_API_KEY=your-key
+AZURE_OPENAI_DEPLOYMENT=gpt-4o
+
+# Azure Cosmos DB
+AZURE_COSMOS_ENDPOINT=https://your-cosmos.documents.azure.com:443/
+AZURE_COSMOS_KEY=your-key
+AZURE_COSMOS_DATABASE=healthmesh
+
+# Azure Health Data Services
+AZURE_FHIR_ENDPOINT=https://your-fhir.fhir.azurehealthcareapis.com
+
+# Azure Document Intelligence
+AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT=https://your-docint.cognitiveservices.azure.com/
+AZURE_DOCUMENT_INTELLIGENCE_KEY=your-key
+
+# Azure Cognitive Search
+AZURE_SEARCH_ENDPOINT=https://your-search.search.windows.net
+AZURE_SEARCH_ADMIN_KEY=your-key
+
+# Azure Monitor
+APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=...
+```
+
+## 📁 Project Structure
+
+```
+├── client/                 # Frontend React application
+│   ├── src/
+│   │   ├── components/     # UI components (Radix-based)
+│   │   ├── pages/          # Route pages
+│   │   ├── hooks/          # Custom React hooks
+│   │   └── lib/            # Utilities
+├── server/                 # Backend Express server
+│   ├── azure/              # Azure service clients
+│   │   ├── config.ts       # Configuration management
+│   │   ├── openai-client.ts
+│   │   ├── fhir-client.ts
+│   │   ├── document-intelligence.ts
+│   │   ├── cognitive-search.ts
+│   │   ├── cosmos-db.ts
+│   │   └── monitoring.ts
+│   ├── azure-agents.ts     # Azure-powered AI agents
+│   ├── azure-routes.ts     # REST API endpoints
+│   └── index.ts            # Server entry point
+├── shared/                 # Shared TypeScript schemas
+├── infra/                  # Azure Bicep IaC
+│   └── main.bicep          # Infrastructure definition
+├── .github/workflows/      # CI/CD pipelines
+│   └── deploy.yml
+└── script/
+    └── deploy-azure.sh     # Deployment script
+```
+
+## 🔧 Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server with hot reload |
+| `npm run build` | Build for production |
+| `npm start` | Run production server |
+| `npm run check` | TypeScript type checking |
+| `./script/deploy-azure.sh` | Deploy to Azure |
+
+## 📊 API Endpoints
+
+### Patients
+- `GET /api/patients` - List all patients
+- `GET /api/patients/:id` - Get patient by ID
+- `POST /api/patients` - Create new patient
+- `PUT /api/patients/:id` - Update patient
+- `DELETE /api/patients/:id` - Delete patient
+
+### Clinical Cases
+- `GET /api/cases` - List all cases
+- `GET /api/cases/:id` - Get case by ID
+- `POST /api/cases` - Create new case
+- `PUT /api/cases/:id` - Update case
+- `POST /api/cases/:id/analyze` - Run AI analysis
+
+### Lab Reports
+- `GET /api/cases/:id/lab-reports` - Get case lab reports
+- `POST /api/cases/:id/lab-reports` - Upload lab report (PDF/image)
+
+### Chat
+- `POST /api/cases/:id/chat` - Send message to clinical assistant
+
+### Dashboard
+- `GET /api/dashboard/stats` - Get dashboard statistics
+
+### Audit
+- `GET /api/audit` - Get audit logs
+- `GET /api/audit/:entityType/:entityId` - Get entity audit trail
+
+## 🔒 Security & Compliance
+
+- All AI decisions logged to Azure Monitor
+- Full audit trail for HIPAA compliance
+- Managed identities for Azure service auth
+- HTTPS-only with TLS 1.2+
+- Role-based access control ready
+
+## 🏆 Imagine Cup 2025
+
+This project is built for Microsoft Imagine Cup 2025 in the Healthcare category. It demonstrates:
+
+1. **Technical Excellence** - Multi-agent AI architecture with Azure services
+2. **Healthcare Impact** - Addresses clinical decision support challenges
+3. **Azure Integration** - Deep integration with Azure AI and health services
+4. **Production Ready** - Complete with IaC, CI/CD, and monitoring
+
+## 📜 License
+
+MIT
+
+## 🤝 Contributing
+
+Contributions welcome! Please read our contributing guidelines first.

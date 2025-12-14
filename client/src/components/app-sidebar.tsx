@@ -92,8 +92,8 @@ export function AppSidebar() {
             <Activity className="h-5 w-5 text-primary-foreground" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold">AI Clinical Care</span>
-            <span className="text-xs text-muted-foreground">Orchestrator</span>
+            <span className="text-sm font-semibold">HealthMesh</span>
+            <span className="text-xs text-muted-foreground">Clinical Care Platform</span>
           </div>
         </div>
       </SidebarHeader>
