@@ -83,9 +83,9 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["var(--font-sans)"],
-        serif: ["var(--font-serif)"],
-        mono: ["var(--font-mono)"],
+        sans: ["'Segoe UI'", "system-ui", "sans-serif"],
+        serif: ["Georgia", "serif"],
+        mono: ["Consolas", "monospace"],
       },
       keyframes: {
         "accordion-down": {
