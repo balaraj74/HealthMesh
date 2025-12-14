@@ -1,0 +1,186 @@
+You are a senior Microsoft Azure Solutions Architect, Healthcare AI Engineer, and Imagine Cup mentor.
+
+Your task is to design and build a WORKING PROTOTYPE of an AI-powered, multi-agent healthcare system aligned with Microsoft’s Health & Life Sciences vision.
+
+=== CORE GOAL ===
+Build a cloud-native, multi-agent AI platform that helps healthcare providers and researchers make faster, safer, and smarter clinical decisions by orchestrating patient data, lab results, medical research, and clinician input in real time.
+
+This system MUST demonstrate:
+• Multi-agent AI orchestration
+• Azure-first architecture
+• Healthcare-grade workflows
+• Explainable and responsible AI
+• Real-world clinical use cases (tumor board, chronic disease, research)
+
+=== SYSTEM NAME ===
+“AI Clinical Care Orchestrator”
+
+--------------------------------------------------
+1. MULTI-AGENT ARCHITECTURE (MANDATORY)
+--------------------------------------------------
+Design the system as a set of specialized AI agents coordinated by a central Orchestrator.
+
+Agents required:
+
+1️⃣ Patient Context Agent
+- Ingest patient data using FHIR format
+- Handle demographics, diagnoses, allergies, medications, history
+- Normalize and structure data
+
+Azure Services:
+- Azure Health Data Services (FHIR)
+- Azure Cosmos DB
+
+2️⃣ Labs & Reports Agent
+- Parse lab reports (PDF, images)
+- Detect abnormal trends and critical values
+- Flag urgent risks
+
+Azure Services:
+- Azure Document Intelligence
+- Azure AI Vision
+- Azure Machine Learning
+
+3️⃣ Research & Guidelines Agent
+- Search latest medical research, clinical guidelines
+- Compare treatment options
+- Cite sources clearly
+
+Azure Services:
+- Azure Cognitive Search
+- Azure OpenAI
+- Azure ML Pipelines
+
+4️⃣ Risk & Safety Agent
+- Check drug–drug interactions
+- Contraindications
+- Dosage limits
+- Age, pregnancy, comorbidity risks
+
+Azure Services:
+- Azure OpenAI
+- Azure Functions (rule engine)
+
+5️⃣ Clinician Interaction Agent
+- Conversational interface for doctors
+- Explain AI reasoning in simple medical language
+- Accept clinician feedback and corrections
+
+Azure Services:
+- Azure OpenAI
+- Azure Bot Service
+- Azure App Service
+
+6️⃣ AGENT ORCHESTRATOR (CRITICAL)
+- Coordinate all agents
+- Merge outputs
+- Resolve conflicts
+- Maintain audit trail
+- Ensure explainability
+
+Azure Services:
+- Healthcare Agent Orchestrator
+- Azure Logic Apps
+- Azure Functions
+
+--------------------------------------------------
+2. CORE FEATURES (MAXIMUM FEATURES REQUIRED)
+--------------------------------------------------
+
+The prototype MUST include:
+
+✅ Patient case upload (FHIR JSON + UI form)
+✅ Lab report upload (PDF/image)
+✅ Automated data extraction & structuring
+✅ Multi-agent reasoning pipeline
+✅ Evidence-backed recommendations
+✅ Risk alerts & safety flags
+✅ Confidence scoring for AI outputs
+✅ Explainable AI (why a recommendation was made)
+✅ Clinician feedback loop
+✅ Full decision summary report
+✅ Dashboard for clinicians
+✅ Logs for compliance & auditability
+
+--------------------------------------------------
+3. USE CASE (IMPLEMENT AT LEAST ONE FULLY)
+--------------------------------------------------
+
+Primary Use Case (required):
+🧬 AI-Assisted Tumor Board Decision Support
+
+Workflow:
+1. Upload patient oncology case
+2. Agents analyze patient history, labs, research
+3. Safety agent checks risks
+4. Orchestrator compiles recommendations
+5. Clinician reviews AI-supported summary
+
+Optional additional use cases:
+• Chronic disease management
+• Rare disease diagnosis support
+• Clinical trial matching
+• ICU risk escalation
+
+--------------------------------------------------
+4. TECH STACK REQUIREMENTS
+--------------------------------------------------
+
+Frontend:
+- React or Next.js
+- Clean clinical dashboard UI
+
+Backend:
+- Python (FastAPI)
+- REST APIs
+- Secure data flow
+
+Cloud:
+- Azure App Service
+- Azure Functions
+- Azure Cosmos DB
+- Azure Health Data Services
+- Azure OpenAI
+- Azure Cognitive Services
+
+--------------------------------------------------
+5. RESPONSIBLE AI & HEALTHCARE SAFETY
+--------------------------------------------------
+
+System must:
+• Clearly state “Decision Support – Not Diagnosis”
+• Provide explainability
+• Avoid hallucinations
+• Include human-in-the-loop
+• Log all AI actions
+
+--------------------------------------------------
+6. OUTPUT REQUIRED FROM YOU
+--------------------------------------------------
+
+Generate:
+1️⃣ System architecture explanation
+2️⃣ Agent definitions & responsibilities
+3️⃣ API flow between agents
+4️⃣ Sample FHIR patient JSON
+5️⃣ Sample lab report processing
+6️⃣ Prompt templates for each agent
+7️⃣ Orchestrator logic (pseudo-code)
+8️⃣ UI wireframe description
+9️⃣ Deployment steps on Azure
+🔟 Demo scenario for Imagine Cup judges
+
+--------------------------------------------------
+7. QUALITY BAR
+--------------------------------------------------
+
+Treat this as:
+• A Microsoft reference architecture
+• An Imagine Cup finalist project
+• A real healthcare startup MVP
+
+Be precise, technical, scalable, and realistic.
+Avoid vague explanations.
+Use Microsoft terminology correctly.
+
+BEGIN BUILDING THE PROTOTYPE NOW.
