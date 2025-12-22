@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -7,6 +7,11 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { TopHeader } from "@/components/top-header";
+import { AuthProvider } from "@/auth/AuthProvider";
+import { ProtectedRoute } from "@/auth/ProtectedRoute";
+import Login from "@/pages/login";
+import Signup from "@/pages/signup";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Cases from "@/pages/cases";
@@ -14,6 +19,7 @@ import CaseNew from "@/pages/case-new";
 import CaseDetail from "@/pages/case-detail";
 import Patients from "@/pages/patients";
 import PatientNew from "@/pages/patient-new";
+import PatientDetail from "@/pages/patient-detail";
 import Labs from "@/pages/labs";
 import Orchestrator from "@/pages/orchestrator";
 import RiskSafety from "@/pages/risk-safety";
@@ -24,51 +30,128 @@ import Settings from "@/pages/settings";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/cases" component={Cases} />
-      <Route path="/cases/new" component={CaseNew} />
-      <Route path="/cases/:id" component={CaseDetail} />
-      <Route path="/patients" component={Patients} />
-      <Route path="/patients/new" component={PatientNew} />
-      <Route path="/labs" component={Labs} />
-      <Route path="/orchestrator" component={Orchestrator} />
-      <Route path="/risk-safety" component={RiskSafety} />
-      <Route path="/chat" component={Chat} />
-      <Route path="/audit" component={AuditLogs} />
-      <Route path="/settings" component={Settings} />
+      {/* Public routes - Login and Signup pages (no sidebar) */}
+      <Route path="/login" component={Login} />
+      <Route path="/signup" component={Signup} />
+
+      {/* Protected routes - Require authentication */}
+      <Route path="/">
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/cases">
+        <ProtectedRoute>
+          <Cases />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/cases/new">
+        <ProtectedRoute>
+          <CaseNew />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/cases/:id">
+        <ProtectedRoute>
+          <CaseDetail />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/patients">
+        <ProtectedRoute>
+          <Patients />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/patients/new">
+        <ProtectedRoute>
+          <PatientNew />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/patients/:id">
+        <ProtectedRoute>
+          <PatientDetail />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/labs">
+        <ProtectedRoute>
+          <Labs />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/orchestrator">
+        <ProtectedRoute>
+          <Orchestrator />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/risk-safety">
+        <ProtectedRoute>
+          <RiskSafety />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/chat">
+        <ProtectedRoute>
+          <Chat />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/audit">
+        <ProtectedRoute>
+          <AuditLogs />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/settings">
+        <ProtectedRoute>
+          <Settings />
+        </ProtectedRoute>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-function App() {
+// Wrapper to conditionally render sidebar based on route
+function AppContent() {
+  const [location] = useLocation();
+  const isAuthPage = location === "/login" || location === "/signup";
+
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
   };
 
+  // Auth pages: No sidebar, just the page content
+  if (isAuthPage) {
+    return <Router />;
+  }
+
+  // Protected pages: Full layout with sidebar
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="clinical-care-theme">
-        <TooltipProvider>
-          <SidebarProvider style={style as React.CSSProperties}>
-            <div className="flex h-screen w-full">
-              <AppSidebar />
-              <div className="flex flex-col flex-1 overflow-hidden">
-                <header className="flex items-center justify-between gap-4 p-2 border-b bg-background z-10">
-                  <SidebarTrigger data-testid="button-sidebar-toggle" />
-                  <ThemeToggle />
-                </header>
-                <main className="flex-1 overflow-auto bg-background">
-                  <Router />
-                </main>
-              </div>
-            </div>
-          </SidebarProvider>
-          <Toaster />
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <SidebarProvider style={style as React.CSSProperties}>
+      <div className="flex h-screen w-full">
+        <AppSidebar />
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <TopHeader />
+          <main className="flex-1 overflow-auto bg-background">
+            <Router />
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+}
+
+import { ErrorBoundary } from "@/components/error-boundary";
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="light" storageKey="clinical-care-theme">
+            <TooltipProvider>
+              <AppContent />
+              <Toaster />
+            </TooltipProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

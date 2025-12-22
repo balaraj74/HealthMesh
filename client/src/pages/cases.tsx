@@ -42,9 +42,10 @@ import {
 } from "@/components/ui/table";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { ClinicalCase, CaseStatus } from "@shared/schema";
+import type { ClinicalCase, CaseStatus, RiskAlert } from "@shared/schema";
 
-const statusConfig: Record<CaseStatus, { label: string; color: string; icon: typeof Clock }> = {
+const statusConfig: Record<string, { label: string; color: string; icon: typeof Clock }> = {
+  active: { label: "Active", color: "bg-green-500", icon: CheckCircle },
   draft: { label: "Draft", color: "bg-gray-500", icon: Clock },
   submitted: { label: "Submitted", color: "bg-blue-500", icon: Clock },
   analyzing: { label: "Analyzing", color: "bg-yellow-500", icon: Brain },
@@ -115,8 +116,13 @@ export default function Cases() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const { toast } = useToast();
 
-  const { data: cases, isLoading } = useQuery<ClinicalCase[]>({
+  const { data: cases, isLoading } = useQuery({
     queryKey: ["/api/cases"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/cases");
+      const data: { success: boolean; data: ClinicalCase[] } = await response.json();
+      return data.data;
+    },
   });
 
   const deleteMutation = useMutation({
@@ -139,9 +145,11 @@ export default function Cases() {
     },
   });
 
-  const filteredCases = cases?.filter((caseItem) => {
-    const matchesSearch = caseItem.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      caseItem.clinicalQuestion.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredCases = cases?.filter((caseItem: any) => {
+    const caseId = caseItem.id?.toLowerCase() || "";
+    const clinicalQuestion = caseItem.clinicalQuestion?.toLowerCase() || caseItem.title?.toLowerCase() || caseItem.description?.toLowerCase() || "";
+    const matchesSearch = caseId.includes(searchQuery.toLowerCase()) ||
+      clinicalQuestion.includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || caseItem.status === statusFilter;
     const matchesType = typeFilter === "all" || caseItem.caseType === typeFilter;
     return matchesSearch && matchesStatus && matchesType;
@@ -224,10 +232,10 @@ export default function Cases() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCases.map((caseItem) => {
-                  const status = statusConfig[caseItem.status];
+                {filteredCases.map((caseItem: any) => {
+                  const status = statusConfig[caseItem.status] || statusConfig.active;
                   const StatusIcon = status.icon;
-                  const criticalAlerts = caseItem.riskAlerts?.filter(a => a.severity === "critical").length ?? 0;
+                  const criticalAlerts = caseItem.riskAlerts?.filter((a: any) => a.severity === "critical").length ?? 0;
 
                   return (
                     <TableRow key={caseItem.id} data-testid={`row-case-${caseItem.id}`}>

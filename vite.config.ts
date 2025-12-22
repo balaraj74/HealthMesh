@@ -11,16 +11,20 @@ export default defineConfig({
     },
   },
   root: path.resolve(import.meta.dirname, "client"),
+  // Load .env files from project root (where .env.local is)
+  envDir: path.resolve(import.meta.dirname),
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     sourcemap: true,
   },
   server: {
-    port: 5173,
+    port: 3000,
     fs: {
       strict: true,
       deny: ["**/.*"],
     },
   },
+  envPrefix: ["VITE_"],
 });
+

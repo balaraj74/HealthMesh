@@ -72,10 +72,23 @@ function EmptyState() {
   );
 }
 
-function PatientCard({ patient, onDelete }: { patient: Patient; onDelete: (id: string) => void }) {
-  const initials = `${patient.demographics.firstName[0]}${patient.demographics.lastName[0]}`.toUpperCase();
-  const severeAllergies = patient.allergies.filter(
-    a => a.severity === "severe" || a.severity === "life-threatening"
+function PatientCard({ patient, onDelete }: { patient: any; onDelete: (id: string) => void }) {
+  // Handle both flat (from DB) and nested (legacy) structures
+  const firstName = patient.firstName || (patient as any).demographics?.firstName || "Unknown";
+  const lastName = patient.lastName || (patient as any).demographics?.lastName || "";
+  const mrn = patient.mrn || (patient as any).demographics?.mrn || "N/A";
+  const gender = patient.gender || (patient as any).demographics?.gender || "unknown";
+  const dateOfBirth = patient.dateOfBirth || (patient as any).demographics?.dateOfBirth || "N/A";
+
+  const initials = `${firstName[0] || "?"}${lastName[0] || "?"}`.toUpperCase();
+
+  // Handle allergies - could be JSON array or null
+  const allergies = Array.isArray(patient.allergies) ? patient.allergies : [];
+  const diagnoses = Array.isArray(patient.diagnoses) ? patient.diagnoses : [];
+  const medications = Array.isArray(patient.medications) ? patient.medications : [];
+
+  const severeAllergies = allergies.filter(
+    (a: any) => a?.severity === "severe" || a?.severity === "life-threatening"
   );
 
   return (
@@ -87,11 +100,11 @@ function PatientCard({ patient, onDelete }: { patient: Patient; onDelete: (id: s
               {initials}
             </AvatarFallback>
           </Avatar>
-          
+
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-medium">
-                {patient.demographics.firstName} {patient.demographics.lastName}
+                {firstName} {lastName}
               </h3>
               {severeAllergies.length > 0 && (
                 <Badge variant="destructive" className="gap-1 text-xs">
@@ -101,20 +114,20 @@ function PatientCard({ patient, onDelete }: { patient: Patient; onDelete: (id: s
               )}
             </div>
             <p className="text-sm text-muted-foreground mb-3">
-              MRN: {patient.demographics.mrn} | {patient.demographics.gender} | DOB: {patient.demographics.dateOfBirth}
+              MRN: {mrn} | {gender} | DOB: {dateOfBirth}
             </p>
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="outline" className="gap-1 text-xs">
                 <FileText className="h-3 w-3" />
-                {patient.diagnoses.length} conditions
+                {diagnoses.length} conditions
               </Badge>
               <Badge variant="outline" className="gap-1 text-xs">
                 <Pill className="h-3 w-3" />
-                {patient.medications.length} medications
+                {medications.length} medications
               </Badge>
               <Badge variant="outline" className="gap-1 text-xs">
                 <AlertCircle className="h-3 w-3" />
-                {patient.allergies.length} allergies
+                {allergies.length} allergies
               </Badge>
             </div>
           </div>
@@ -157,9 +170,12 @@ export default function Patients() {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
-  const { data: patients, isLoading } = useQuery<Patient[]>({
+  const { data: patients, isLoading, error } = useQuery<any>({
     queryKey: ["/api/patients"],
   });
+
+  // Extract patients array from API response
+  const patientsList = Array.isArray(patients?.data) ? patients.data : [];
 
   const deleteMutation = useMutation({
     mutationFn: async (patientId: string) => {
@@ -181,11 +197,15 @@ export default function Patients() {
     },
   });
 
-  const filteredPatients = patients?.filter((patient) => {
-    const fullName = `${patient.demographics.firstName} ${patient.demographics.lastName}`.toLowerCase();
-    const mrn = patient.demographics.mrn.toLowerCase();
+  const filteredPatients = patientsList?.filter((patient: any) => {
+    // Handle both flat (from DB) and nested (legacy) structures
+    const firstName = patient.firstName || patient.demographics?.firstName || "";
+    const lastName = patient.lastName || patient.demographics?.lastName || "";
+    const mrn = patient.mrn || patient.demographics?.mrn || "";
+
+    const fullName = `${firstName} ${lastName}`.toLowerCase();
     const query = searchQuery.toLowerCase();
-    return fullName.includes(query) || mrn.includes(query);
+    return fullName.includes(query) || mrn.toLowerCase().includes(query);
   });
 
   return (
@@ -217,7 +237,18 @@ export default function Patients() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {error ? (
+            <div className="py-16 text-center">
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">Failed to Load Patients</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {error instanceof Error ? error.message : "An error occurred while loading patients."}
+              </p>
+              <Button variant="outline" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </div>
+          ) : isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[1, 2, 3, 4].map((i) => (
                 <PatientCardSkeleton key={i} />
@@ -227,7 +258,7 @@ export default function Patients() {
             <EmptyState />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredPatients.map((patient) => (
+              {filteredPatients.map((patient: any) => (
                 <PatientCard
                   key={patient.id}
                   patient={patient}

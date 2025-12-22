@@ -1,17 +1,20 @@
 import { Link, useLocation } from "wouter";
+import { useMsal } from "@azure/msal-react";
 import {
-  LayoutDashboard,
-  Users,
-  FolderOpen,
-  FileText,
-  Activity,
-  Brain,
-  Shield,
-  MessageSquare,
-  ClipboardList,
-  Settings,
-  AlertTriangle,
-} from "lucide-react";
+  VscDashboard,
+  VscOrganization,
+  VscFolderOpened,
+  VscFile,
+  VscPulse,
+  VscCircuitBoard,
+  VscShield,
+  VscComment,
+  VscChecklist,
+  VscSettingsGear,
+  VscWarning,
+  VscSignOut,
+  VscAccount,
+} from "react-icons/vsc";
 import {
   Sidebar,
   SidebarContent,
@@ -24,47 +27,48 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-const mainNavItems = [
+const clinicalNavItems = [
   {
     title: "Dashboard",
     url: "/",
-    icon: LayoutDashboard,
+    icon: VscDashboard,
   },
   {
     title: "Cases",
     url: "/cases",
-    icon: FolderOpen,
+    icon: VscFolderOpened,
   },
   {
     title: "Patients",
     url: "/patients",
-    icon: Users,
+    icon: VscOrganization,
   },
   {
     title: "Lab Reports",
     url: "/labs",
-    icon: FileText,
+    icon: VscFile,
   },
 ];
 
-const agentNavItems = [
+const aiNavItems = [
   {
     title: "Agent Orchestrator",
     url: "/orchestrator",
-    icon: Brain,
+    icon: VscCircuitBoard,
   },
   {
     title: "Risk & Safety",
     url: "/risk-safety",
-    icon: Shield,
+    icon: VscShield,
   },
   {
-    title: "Clinician Chat",
+    title: "Clinical Chat",
     url: "/chat",
-    icon: MessageSquare,
+    icon: VscComment,
   },
 ];
 
@@ -72,47 +76,63 @@ const systemNavItems = [
   {
     title: "Audit Logs",
     url: "/audit",
-    icon: ClipboardList,
+    icon: VscChecklist,
   },
   {
     title: "Settings",
     url: "/settings",
-    icon: Settings,
+    icon: VscSettingsGear,
   },
 ];
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const { instance, accounts } = useMsal();
+  const msalAccount = accounts[0];
+
+  const handleLogout = () => {
+    instance.logoutPopup({
+      postLogoutRedirectUri: "/login",
+      mainWindowRedirectUri: "/login"
+    }).catch((error) => {
+      console.error("Logout error:", error);
+      window.location.href = "/login";
+    });
+  };
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-4 border-b border-sidebar-border">
+      <SidebarHeader className="h-14 flex items-center px-4 border-b border-sidebar-border bg-sidebar">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary">
-            <Activity className="h-5 w-5 text-primary-foreground" />
+          <div className="flex h-8 w-8 items-center justify-center rounded bg-primary text-primary-foreground">
+            <VscPulse className="h-5 w-5" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold">HealthMesh</span>
-            <span className="text-xs text-muted-foreground">Clinical Care Platform</span>
+          <div className="flex flex-col leading-none">
+            <span className="text-sm font-bold tracking-tight">HealthMesh</span>
+            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Enterprise</span>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="py-2">
         <SidebarGroup>
-          <SidebarGroupLabel>Clinical Workflow</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 px-4 mb-2">Clinical</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavItems.map((item) => (
+              {clinicalNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
+                    isActive={location === item.url}
                     className={cn(
-                      location === item.url && "bg-sidebar-accent"
+                      "h-9 px-4 w-full justify-start gap-3 transition-colors",
+                      location === item.url
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-2 border-primary rounded-none"
+                        : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
                     )}
                   >
                     <Link href={item.url} data-testid={`link-nav-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-4 w-4 shrink-0" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -122,20 +142,24 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>AI Agents</SidebarGroupLabel>
+        <SidebarGroup className="mt-2">
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 px-4 mb-2">AI & Decision Support</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {agentNavItems.map((item) => (
+              {aiNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
+                    isActive={location === item.url}
                     className={cn(
-                      location === item.url && "bg-sidebar-accent"
+                      "h-9 px-4 w-full justify-start gap-3 transition-colors",
+                      location === item.url
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-2 border-primary rounded-none"
+                        : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
                     )}
                   >
                     <Link href={item.url} data-testid={`link-nav-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-4 w-4 shrink-0" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -145,20 +169,24 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>System</SidebarGroupLabel>
+        <SidebarGroup className="mt-2">
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 px-4 mb-2">System</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {systemNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
+                    isActive={location === item.url}
                     className={cn(
-                      location === item.url && "bg-sidebar-accent"
+                      "h-9 px-4 w-full justify-start gap-3 transition-colors",
+                      location === item.url
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-2 border-primary rounded-none"
+                        : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
                     )}
                   >
                     <Link href={item.url} data-testid={`link-nav-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-4 w-4 shrink-0" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -169,14 +197,43 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-2 p-2 rounded-md bg-destructive/10">
-          <AlertTriangle className="h-4 w-4 text-destructive" />
-          <div className="flex flex-col">
-            <span className="text-xs font-medium text-destructive">Decision Support Only</span>
-            <span className="text-xs text-muted-foreground">Not for diagnosis</span>
+      <SidebarFooter className="p-4 border-t border-sidebar-border bg-sidebar space-y-4">
+        {/* Clinical Disclaimer */}
+        <div className="flex items-start gap-3 p-3 rounded bg-destructive/5 border border-destructive/10">
+          <VscWarning className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[11px] font-bold text-destructive uppercase tracking-wide">Decision Support Only</span>
+            <span className="text-[10px] text-muted-foreground leading-tight">
+              AI recommendations must be verified by a clinician. Not for automated diagnosis.
+            </span>
           </div>
         </div>
+
+        {/* User Profile Section */}
+        {msalAccount && (
+          <div className="flex items-center gap-3 pt-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary border border-primary/20">
+              <VscAccount className="h-4 w-4" />
+            </div>
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="text-xs font-medium truncate text-foreground">
+                {msalAccount.name || "Clinician"}
+              </span>
+              <span className="text-[10px] text-muted-foreground truncate">
+                {msalAccount.username || "Authorized User"}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              title="Sign out"
+            >
+              <VscSignOut className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

@@ -32,15 +32,15 @@ export interface AzureConfig {
     indexName: string;
   };
 
-  // Azure Cosmos DB
-  cosmos: {
-    endpoint: string;
-    key: string;
+  // Azure SQL Database
+  sql: {
+    server: string;
     database: string;
-    containers: {
-      patients: string;
-      cases: string;
-      audit: string;
+    user: string;
+    password: string;
+    options: {
+      encrypt: boolean;
+      trustServerCertificate: boolean;
     };
   };
 
@@ -101,14 +101,14 @@ export function loadAzureConfig(): AzureConfig {
       key: getEnvOrDefault('AZURE_SEARCH_KEY', ''),
       indexName: getEnvOrDefault('AZURE_SEARCH_INDEX_NAME', 'medical-guidelines'),
     },
-    cosmos: {
-      endpoint: getEnvOrDefault('AZURE_COSMOS_ENDPOINT', ''),
-      key: getEnvOrDefault('AZURE_COSMOS_KEY', ''),
-      database: getEnvOrDefault('AZURE_COSMOS_DATABASE', 'healthmesh'),
-      containers: {
-        patients: getEnvOrDefault('AZURE_COSMOS_CONTAINER_PATIENTS', 'patients'),
-        cases: getEnvOrDefault('AZURE_COSMOS_CONTAINER_CASES', 'cases'),
-        audit: getEnvOrDefault('AZURE_COSMOS_CONTAINER_AUDIT', 'auditlogs'),
+    sql: {
+      server: getEnvOrDefault('AZURE_SQL_SERVER', ''),
+      database: getEnvOrDefault('AZURE_SQL_DATABASE', 'healthmesh'),
+      user: getEnvOrDefault('AZURE_SQL_USER', ''),
+      password: getEnvOrDefault('AZURE_SQL_PASSWORD', ''),
+      options: {
+        encrypt: getEnvOrDefault('AZURE_SQL_ENCRYPT', 'true') === 'true',
+        trustServerCertificate: getEnvOrDefault('AZURE_SQL_TRUST_CERT', 'false') === 'true',
       },
     },
     vision: {

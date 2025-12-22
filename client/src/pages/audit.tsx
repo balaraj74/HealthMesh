@@ -148,8 +148,9 @@ export default function AuditLogs() {
   const [actionFilter, setActionFilter] = useState<string>("all");
   const [entityFilter, setEntityFilter] = useState<string>("all");
 
-  const { data: logs, isLoading } = useQuery<AuditLog[]>({
-    queryKey: ["/api/audit-logs"],
+  const { data: logs, isLoading } = useQuery<{ success: boolean; data: AuditLog[] }>({
+    queryKey: ["/api/audit"],
+    select: (response) => response.data,
   });
 
   const filteredLogs = logs?.filter((log) => {

@@ -20,8 +20,8 @@ export { getDocumentIntelligence, AzureDocumentIntelligenceClient } from './docu
 // Azure Cognitive Search
 export { getCognitiveSearch, AzureCognitiveSearchClient, MEDICAL_GUIDELINES_INDEX_SCHEMA } from './cognitive-search';
 
-// Azure Cosmos DB
-export { getCosmosDB, AzureCosmosDBClient } from './cosmos-db';
+// Azure SQL Database
+export { getSQLDB, AzureSQLClient } from './sql-db';
 
 // Monitoring & Logging
 export { AzureMonitor, getMonitor, trackAgentExecution, trackClinicalDecision } from './monitoring';
@@ -72,11 +72,11 @@ export async function initializeAzureServices(): Promise<{
     services['cognitiveSearch'] = false;
   }
 
-  // Check Cosmos DB
-  if (config.cosmos.endpoint && config.cosmos.key) {
-    services['cosmosDB'] = true;
+  // Check Azure SQL
+  if (config.sql.server && config.sql.user) {
+    services['sqlDB'] = true;
   } else {
-    services['cosmosDB'] = false;
+    services['sqlDB'] = false;
   }
 
   // Check FHIR

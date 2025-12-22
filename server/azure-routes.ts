@@ -9,7 +9,7 @@ import { randomUUID } from "crypto";
 import multer from "multer";
 import { analyzeCase, handleClinicianChat, processLabReport } from "./azure-agents";
 import { getAzureConfig, validateAzureConfig, initializeAzureServices } from "./azure";
-import { getCosmosDB } from "./azure/cosmos-db";
+import { getSQLDB } from "./azure/sql-db";
 import { getCognitiveSearch, MEDICAL_GUIDELINES_INDEX_SCHEMA } from "./azure/cognitive-search";
 import { getMonitor } from "./azure/monitoring";
 import { storage } from "./storage";
@@ -43,7 +43,7 @@ const upload = multer({
 // Helper function to determine storage backend
 function useAzureStorage(): boolean {
   const config = getAzureConfig();
-  return !!(config.cosmos.endpoint && config.cosmos.key);
+  return !!(config.sql.server && config.sql.user);
 }
 
 // Helper to create audit log
@@ -64,7 +64,7 @@ async function createAuditLog(
   };
 
   if (useAzureStorage()) {
-    await getCosmosDB().createAuditLog(log);
+    await getSQLDB().createAuditLog(log);
   } else {
     await storage.createAuditLog(log);
   }
@@ -101,7 +101,7 @@ export async function registerRoutes(
         fhir: !!config.fhir.endpoint,
         documentIntelligence: !!config.documentIntelligence.endpoint,
         cognitiveSearch: !!config.search.endpoint,
-        cosmosDB: !!config.cosmos.endpoint,
+        sqlDB: !!config.sql.server,
         appInsights: !!config.appInsights.connectionString,
       },
     });
@@ -114,7 +114,7 @@ export async function registerRoutes(
   app.get("/api/patients", async (req: Request, res: Response) => {
     try {
       const patients = useAzureStorage()
-        ? await getCosmosDB().getPatients()
+        ? await getSQLDB().getPatients()
         : await storage.getPatients();
 
       res.json({ success: true, data: patients });
@@ -126,7 +126,7 @@ export async function registerRoutes(
   app.get("/api/patients/:id", async (req: Request, res: Response) => {
     try {
       const patient = useAzureStorage()
-        ? await getCosmosDB().getPatient(req.params.id)
+        ? await getSQLDB().getPatient(req.params.id)
         : await storage.getPatient(req.params.id);
 
       if (!patient) {
@@ -142,12 +142,16 @@ export async function registerRoutes(
 
   app.post("/api/patients", async (req: Request, res: Response) => {
     try {
+      console.log('[PATIENT_CREATE] Received request:', JSON.stringify(req.body, null, 2));
       const patientData: InsertPatient = req.body;
 
+      console.log('[PATIENT_CREATE] Using Azure Storage:', useAzureStorage());
       const patient = useAzureStorage()
-        ? await getCosmosDB().createPatient(patientData)
+        ? await getSQLDB().createPatient(patientData)
         : await storage.createPatient(patientData);
 
+      console.log('[PATIENT_CREATE] Patient created successfully:', patient.id);
+      
       await createAuditLog('patient-created', 'patient', patient.id, {
         mrn: patient.demographics.mrn,
         name: `${patient.demographics.firstName} ${patient.demographics.lastName}`,
@@ -155,6 +159,7 @@ export async function registerRoutes(
 
       res.status(201).json({ success: true, data: patient });
     } catch (error) {
+      console.error('[PATIENT_CREATE_ERROR]', error);
       res.status(500).json({ success: false, error: (error as Error).message });
     }
   });
@@ -162,7 +167,7 @@ export async function registerRoutes(
   app.delete("/api/patients/:id", async (req: Request, res: Response) => {
     try {
       const deleted = useAzureStorage()
-        ? await getCosmosDB().deletePatient(req.params.id)
+        ? await getSQLDB().deletePatient(req.params.id)
         : await storage.deletePatient(req.params.id);
 
       if (!deleted) {
@@ -182,7 +187,7 @@ export async function registerRoutes(
   app.get("/api/cases", async (req: Request, res: Response) => {
     try {
       const cases = useAzureStorage()
-        ? await getCosmosDB().getCases()
+        ? await getSQLDB().getCases()
         : await storage.getCases();
 
       res.json({ success: true, data: cases });
@@ -194,7 +199,7 @@ export async function registerRoutes(
   app.get("/api/cases/:id", async (req: Request, res: Response) => {
     try {
       const clinicalCase = useAzureStorage()
-        ? await getCosmosDB().getCase(req.params.id)
+        ? await getSQLDB().getCase(req.params.id)
         : await storage.getCase(req.params.id);
 
       if (!clinicalCase) {
@@ -213,7 +218,7 @@ export async function registerRoutes(
       const caseData: InsertCase = req.body;
 
       const clinicalCase = useAzureStorage()
-        ? await getCosmosDB().createCase(caseData)
+        ? await getSQLDB().createCase(caseData)
         : await storage.createCase(caseData);
 
       await createAuditLog('case-created', 'case', clinicalCase.id, {
@@ -233,11 +238,11 @@ export async function registerRoutes(
       const updates = req.body;
 
       let updatedCase: ClinicalCase | undefined;
-      
+
       if (useAzureStorage()) {
-        const existingCase = await getCosmosDB().getCase(req.params.id);
+        const existingCase = await getSQLDB().getCase(req.params.id);
         if (existingCase) {
-          updatedCase = await getCosmosDB().updateCase(req.params.id, existingCase.patientId, updates);
+          updatedCase = await getSQLDB().updateCase(req.params.id, existingCase.patientId, updates);
         }
       } else {
         updatedCase = await storage.updateCase(req.params.id, updates);
@@ -257,11 +262,11 @@ export async function registerRoutes(
   app.delete("/api/cases/:id", async (req: Request, res: Response) => {
     try {
       let deleted = false;
-      
+
       if (useAzureStorage()) {
-        const existingCase = await getCosmosDB().getCase(req.params.id);
+        const existingCase = await getSQLDB().getCase(req.params.id);
         if (existingCase) {
-          deleted = await getCosmosDB().deleteCase(req.params.id, existingCase.patientId);
+          deleted = await getSQLDB().deleteCase(req.params.id, existingCase.patientId);
         }
       } else {
         deleted = await storage.deleteCase(req.params.id);
@@ -287,7 +292,7 @@ export async function registerRoutes(
 
       // Get case and patient
       const clinicalCase = useAzureStorage()
-        ? await getCosmosDB().getCase(caseId)
+        ? await getSQLDB().getCase(caseId)
         : await storage.getCase(caseId);
 
       if (!clinicalCase) {
@@ -295,7 +300,7 @@ export async function registerRoutes(
       }
 
       const patient = useAzureStorage()
-        ? await getCosmosDB().getPatient(clinicalCase.patientId)
+        ? await getSQLDB().getPatient(clinicalCase.patientId)
         : await storage.getPatient(clinicalCase.patientId);
 
       if (!patient) {
@@ -304,7 +309,7 @@ export async function registerRoutes(
 
       // Update case status to analyzing
       if (useAzureStorage()) {
-        await getCosmosDB().updateCase(caseId, patient.id, { status: 'analyzing' });
+        await getSQLDB().updateCase(caseId, patient.id, { status: 'analyzing' });
       } else {
         await storage.updateCase(caseId, { status: 'analyzing' });
       }
@@ -325,7 +330,7 @@ export async function registerRoutes(
 
       let updatedCase: ClinicalCase | undefined;
       if (useAzureStorage()) {
-        updatedCase = await getCosmosDB().updateCase(caseId, patient.id, updates);
+        updatedCase = await getSQLDB().updateCase(caseId, patient.id, updates);
       } else {
         updatedCase = await storage.updateCase(caseId, updates);
       }
@@ -358,7 +363,7 @@ export async function registerRoutes(
   app.get("/api/cases/:id/lab-reports", async (req: Request, res: Response) => {
     try {
       const reports = useAzureStorage()
-        ? await getCosmosDB().getLabReports(req.params.id)
+        ? await getSQLDB().getlab_reports(req.params.id)
         : await storage.getLabReports(req.params.id);
 
       res.json({ success: true, data: reports });
@@ -395,7 +400,7 @@ export async function registerRoutes(
       };
 
       const createdReport = useAzureStorage()
-        ? await getCosmosDB().createLabReport(labReport)
+        ? await getSQLDB().createLabReport(labReport)
         : await storage.createLabReport(labReport);
 
       await createAuditLog('lab-uploaded', 'lab-report', createdReport.id, {
@@ -428,7 +433,7 @@ export async function registerRoutes(
   app.get("/api/cases/:id/chat", async (req: Request, res: Response) => {
     try {
       const messages = useAzureStorage()
-        ? await getCosmosDB().getChatMessages(req.params.id)
+        ? await getSQLDB().getchat_messages(req.params.id)
         : await storage.getChatMessages(req.params.id);
 
       res.json({ success: true, data: messages });
@@ -448,7 +453,7 @@ export async function registerRoutes(
 
       // Get case and patient
       const clinicalCase = useAzureStorage()
-        ? await getCosmosDB().getCase(caseId)
+        ? await getSQLDB().getCase(caseId)
         : await storage.getCase(caseId);
 
       if (!clinicalCase) {
@@ -456,7 +461,7 @@ export async function registerRoutes(
       }
 
       const patient = useAzureStorage()
-        ? await getCosmosDB().getPatient(clinicalCase.patientId)
+        ? await getSQLDB().getPatient(clinicalCase.patientId)
         : await storage.getPatient(clinicalCase.patientId);
 
       if (!patient) {
@@ -472,7 +477,7 @@ export async function registerRoutes(
       };
 
       if (useAzureStorage()) {
-        await getCosmosDB().createChatMessage(clinicianMessage);
+        await getSQLDB().createChatMessage(clinicianMessage);
       } else {
         await storage.createChatMessage(clinicianMessage);
       }
@@ -490,7 +495,7 @@ export async function registerRoutes(
       };
 
       const savedResponse = useAzureStorage()
-        ? await getCosmosDB().createChatMessage(assistantMessage)
+        ? await getSQLDB().createChatMessage(assistantMessage)
         : await storage.createChatMessage(assistantMessage);
 
       res.json({ success: true, data: savedResponse });
@@ -509,7 +514,7 @@ export async function registerRoutes(
       const { status, feedback } = req.body;
 
       const recommendation = useAzureStorage()
-        ? await getCosmosDB().updateRecommendation(caseId, recId, { status, clinicianFeedback: feedback })
+        ? await getSQLDB().updateRecommendation(caseId, recId, { status, clinicianFeedback: feedback })
         : await storage.updateRecommendation(caseId, recId, { status, clinicianFeedback: feedback });
 
       if (!recommendation) {
@@ -538,7 +543,7 @@ export async function registerRoutes(
   app.get("/api/alerts", async (req: Request, res: Response) => {
     try {
       const alerts = useAzureStorage()
-        ? await getCosmosDB().getRiskAlerts()
+        ? await getSQLDB().getRiskAlerts()
         : await storage.getRiskAlerts();
 
       res.json({ success: true, data: alerts });
@@ -550,7 +555,7 @@ export async function registerRoutes(
   app.get("/api/cases/:id/alerts", async (req: Request, res: Response) => {
     try {
       const alerts = useAzureStorage()
-        ? await getCosmosDB().getRiskAlerts(req.params.id)
+        ? await getSQLDB().getRiskAlerts(req.params.id)
         : await storage.getRiskAlerts(req.params.id);
 
       res.json({ success: true, data: alerts });
@@ -566,7 +571,7 @@ export async function registerRoutes(
   app.get("/api/dashboard/stats", async (req: Request, res: Response) => {
     try {
       const stats = useAzureStorage()
-        ? await getCosmosDB().getDashboardStats()
+        ? await getSQLDB().getDashboardStats()
         : await storage.getDashboardStats();
 
       res.json({ success: true, data: stats });
@@ -584,7 +589,7 @@ export async function registerRoutes(
       const entityId = req.query.entityId as string | undefined;
 
       const logs = useAzureStorage()
-        ? await getCosmosDB().getAuditLogs(entityId)
+        ? await getSQLDB().getaudit_logs(entityId)
         : await storage.getAuditLogs(entityId);
 
       res.json({ success: true, data: logs });

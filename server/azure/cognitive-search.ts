@@ -1,10 +1,6 @@
-/**
- * HealthMesh - Azure Cognitive Search Client
- * Provides RAG (Retrieval Augmented Generation) for medical guidelines and research
- */
-
 import { getAzureConfig } from './config';
 import { getAzureOpenAI } from './openai-client';
+import { getGeminiClient } from '../ai/gemini-client';
 
 interface SearchDocument {
   id: string;
@@ -45,34 +41,24 @@ export const MEDICAL_GUIDELINES_INDEX_SCHEMA = {
     { name: 'source', type: 'Edm.String', filterable: true },
     { name: 'url', type: 'Edm.String' },
     { name: 'lastUpdated', type: 'Edm.DateTimeOffset', filterable: true, sortable: true },
-    { name: 'embedding', type: 'Collection(Edm.Single)', searchable: true, dimensions: 1536, vectorSearchConfiguration: 'vectorConfig' },
+    { name: 'embedding', type: 'Collection(Edm.Single)', searchable: true, dimensions: 768, vectorSearchProfile: 'vectorConfig' }, // Gemini uses 768 dims, OpenAI 1536. We need to be careful here.
   ],
   vectorSearch: {
     algorithms: [
-      { name: 'hnsw', kind: 'hnsw', parameters: { m: 4, efConstruction: 400, efSearch: 500, metric: 'cosine' } }
+      { name: 'hnsw', kind: 'hnsw', hnswParameters: { m: 4, efConstruction: 400, efSearch: 500, metric: 'cosine' } }
     ],
     profiles: [
       { name: 'vectorConfig', algorithm: 'hnsw' }
     ]
   },
-  semantic: {
-    configurations: [
-      {
-        name: 'semantic-config',
-        prioritizedFields: {
-          titleField: { fieldName: 'title' },
-          contentFields: [{ fieldName: 'content' }]
-        }
-      }
-    ]
-  }
+
 };
 
 export class AzureCognitiveSearchClient {
   private endpoint: string;
   private apiKey: string;
   private indexName: string;
-  private apiVersion = '2024-07-01';
+  private apiVersion = '2023-11-01';
 
   constructor() {
     const config = getAzureConfig();
@@ -81,11 +67,32 @@ export class AzureCognitiveSearchClient {
     this.indexName = config.search.indexName;
   }
 
+  // Helper to get embeddings from the active provider
+  private async getEmbedding(text: string): Promise<number[]> {
+    if (process.env.AI_PROVIDER === 'gemini') {
+      return getGeminiClient().createEmbedding(text);
+    } else {
+      const result = await getAzureOpenAI().createEmbedding(text);
+      return result.embedding;
+    }
+  }
+
   // ==========================================
   // Index Management
   // ==========================================
 
   async createIndex(schema: typeof MEDICAL_GUIDELINES_INDEX_SCHEMA): Promise<void> {
+    // Adjust dimensions based on provider if needed, but schema is static here.
+    // If using Gemini, dimensions should be 768. If OpenAI, 1536.
+    // We should check the provider and update the schema dimensions dynamically before sending.
+
+    const schemaToSend = JSON.parse(JSON.stringify(schema));
+    if (process.env.AI_PROVIDER === 'gemini') {
+      schemaToSend.fields.find((f: any) => f.name === 'embedding').dimensions = 768;
+    } else {
+      schemaToSend.fields.find((f: any) => f.name === 'embedding').dimensions = 1536;
+    }
+
     const url = `${this.endpoint}/indexes?api-version=${this.apiVersion}`;
 
     const response = await fetch(url, {
@@ -94,10 +101,10 @@ export class AzureCognitiveSearchClient {
         'Content-Type': 'application/json',
         'api-key': this.apiKey,
       },
-      body: JSON.stringify(schema),
+      body: JSON.stringify(schemaToSend),
     });
 
-    if (!response.ok && response.status !== 400) { // 400 might mean index exists
+    if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Failed to create index: ${errorText}`);
     }
@@ -124,14 +131,12 @@ export class AzureCognitiveSearchClient {
   // ==========================================
 
   async indexDocuments(documents: SearchDocument[]): Promise<void> {
-    const openai = getAzureOpenAI();
-
     // Generate embeddings for documents without them
     const docsWithEmbeddings = await Promise.all(
       documents.map(async (doc) => {
         if (!doc.embedding) {
-          const embeddingResult = await openai.createEmbedding(doc.content);
-          return { ...doc, embedding: embeddingResult.embedding };
+          const embedding = await this.getEmbedding(doc.content);
+          return { ...doc, embedding };
         }
         return doc;
       })
@@ -203,7 +208,7 @@ export class AzureCognitiveSearchClient {
       search: query,
       top: options?.top || 10,
       select: 'id,title,content,category,source,url,lastUpdated',
-      highlightFields: 'content',
+      highlight: 'content',
       highlightPreTag: '<mark>',
       highlightPostTag: '</mark>',
     };
@@ -252,8 +257,7 @@ export class AzureCognitiveSearchClient {
     top?: number;
     filter?: string;
   }): Promise<SearchResult[]> {
-    const openai = getAzureOpenAI();
-    const embeddingResult = await openai.createEmbedding(query);
+    const embedding = await this.getEmbedding(query);
 
     const url = `${this.endpoint}/indexes/${this.indexName}/docs/search?api-version=${this.apiVersion}`;
 
@@ -261,7 +265,7 @@ export class AzureCognitiveSearchClient {
       vectorQueries: [
         {
           kind: 'vector',
-          vector: embeddingResult.embedding,
+          vector: embedding,
           fields: 'embedding',
           k: options?.top || 10,
         },
@@ -307,8 +311,7 @@ export class AzureCognitiveSearchClient {
     top?: number;
     filter?: string;
   }): Promise<SearchResult[]> {
-    const openai = getAzureOpenAI();
-    const embeddingResult = await openai.createEmbedding(query);
+    const embedding = await this.getEmbedding(query);
 
     const url = `${this.endpoint}/indexes/${this.indexName}/docs/search?api-version=${this.apiVersion}`;
 
@@ -317,15 +320,14 @@ export class AzureCognitiveSearchClient {
       vectorQueries: [
         {
           kind: 'vector',
-          vector: embeddingResult.embedding,
+          vector: embedding,
           fields: 'embedding',
           k: options?.top || 10,
         },
       ],
       top: options?.top || 10,
       select: 'id,title,content,category,source,url,lastUpdated',
-      queryType: 'semantic',
-      semanticConfiguration: 'semantic-config',
+
     };
 
     if (options?.filter) {
@@ -389,9 +391,7 @@ export class AzureCognitiveSearchClient {
       .map((r, i) => `[Source ${i + 1}: ${r.document.title}]\n${r.document.content}`)
       .join('\n\n---\n\n');
 
-    // Step 3: Generate answer using Azure OpenAI
-    const openai = getAzureOpenAI();
-
+    // Step 3: Generate answer using AI Provider
     const systemPrompt = `You are a clinical decision support assistant. Your role is to provide evidence-based answers using the provided medical guidelines and research.
 
 IMPORTANT RULES:
@@ -409,10 +409,25 @@ ${context}
 
 Please provide an evidence-based response with source citations.`;
 
-    const response = await openai.clinicalCompletion(systemPrompt, userPrompt);
+    let answer = '';
+
+    if (process.env.AI_PROVIDER === 'gemini') {
+      const gemini = getGeminiClient();
+      const result = await gemini.chatCompletion({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ]
+      });
+      answer = result.content;
+    } else {
+      const openai = getAzureOpenAI();
+      const response = await openai.clinicalCompletion(systemPrompt, userPrompt);
+      answer = response.answer || response.response || JSON.stringify(response);
+    }
 
     return {
-      answer: response.answer || response.response || JSON.stringify(response),
+      answer: answer,
       sources: searchResults.map(r => ({
         title: r.document.title,
         source: r.document.source,

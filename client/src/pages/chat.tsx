@@ -28,11 +28,14 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ChatMessage, ClinicalCase } from "@shared/schema";
 
-function MessageBubble({ 
-  message, 
-  onCopy 
-}: { 
-  message: ChatMessage; 
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+function MessageBubble({
+  message,
+  onCopy
+}: {
+  message: ChatMessage;
   onCopy: (text: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -55,15 +58,36 @@ function MessageBubble({
           )}
         </AvatarFallback>
       </Avatar>
-      <div className={`flex-1 max-w-[80%] ${isAssistant ? "" : "flex flex-col items-end"}`}>
+      <div className={`flex-1 max-w-[85%] ${isAssistant ? "" : "flex flex-col items-end"}`}>
         <div
-          className={`rounded-lg p-3 ${
-            isAssistant
-              ? "bg-muted"
-              : "bg-primary text-primary-foreground"
-          }`}
+          className={`rounded-lg p-4 ${isAssistant
+            ? "bg-card border shadow-sm"
+            : "bg-primary text-primary-foreground"
+            }`}
         >
-          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+          {isAssistant ? (
+            <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  h1: ({ node, ...props }) => <h1 className="text-lg font-bold mt-4 mb-2 text-primary border-b pb-1" {...props} />,
+                  h2: ({ node, ...props }) => <h2 className="text-base font-bold mt-3 mb-2 text-primary" {...props} />,
+                  h3: ({ node, ...props }) => <h3 className="text-sm font-bold mt-2 mb-1" {...props} />,
+                  ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2 space-y-1" {...props} />,
+                  ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2 space-y-1" {...props} />,
+                  li: ({ node, ...props }) => <li className="mb-0.5" {...props} />,
+                  p: ({ node, ...props }) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
+                  strong: ({ node, ...props }) => <strong className="font-bold text-foreground" {...props} />,
+                  blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary/30 pl-4 italic my-2 text-muted-foreground" {...props} />,
+                  code: ({ node, ...props }) => <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono" {...props} />,
+                }}
+              >
+                {message.content}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+          )}
         </div>
         <div className={`flex items-center gap-2 mt-1 ${isAssistant ? "" : "flex-row-reverse"}`}>
           <span className="text-xs text-muted-foreground">
@@ -103,14 +127,16 @@ export default function Chat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const { data: cases } = useQuery<ClinicalCase[]>({
+  const { data: casesResponse, error: casesError } = useQuery<any>({
     queryKey: ["/api/cases"],
   });
+  const cases = Array.isArray(casesResponse?.data) ? casesResponse.data : [];
 
-  const { data: messages, isLoading: messagesLoading } = useQuery<ChatMessage[]>({
+  const { data: messagesResponse, isLoading: messagesLoading, error: messagesError } = useQuery<any>({
     queryKey: ["/api/chat", selectedCaseId],
     enabled: !!selectedCaseId,
   });
+  const messages = Array.isArray(messagesResponse?.data) ? messagesResponse.data : [];
 
   const sendMutation = useMutation({
     mutationFn: async (content: string) => {
@@ -159,8 +185,8 @@ export default function Chat() {
     });
   };
 
-  const activeCases = cases?.filter(c => 
-    c.status === "analyzing" || c.status === "review-ready" || c.status === "submitted"
+  const activeCases = cases?.filter((c: any) =>
+    c.status === "active" || c.status === "analyzing" || c.status === "review-ready" || c.status === "submitted"
   ) ?? [];
 
   return (
@@ -172,13 +198,15 @@ export default function Chat() {
         </div>
         <Select value={selectedCaseId} onValueChange={setSelectedCaseId}>
           <SelectTrigger className="w-64" data-testid="select-case">
-            <SelectValue placeholder="Select a case to discuss" />
+            <SelectValue placeholder={casesError ? "Error loading cases" : "Select a case to discuss"} />
           </SelectTrigger>
           <SelectContent>
-            {activeCases.length === 0 ? (
+            {casesError ? (
+              <SelectItem value="error" disabled>Failed to load cases</SelectItem>
+            ) : activeCases.length === 0 ? (
               <SelectItem value="none" disabled>No active cases</SelectItem>
             ) : (
-              activeCases.map((c) => (
+              activeCases.map((c: any) => (
                 <SelectItem key={c.id} value={c.id}>
                   Case #{c.id.slice(0, 8)} - {c.caseType.replace("-", " ")}
                 </SelectItem>
@@ -221,12 +249,21 @@ export default function Chat() {
 
             <ScrollArea className="flex-1 p-4" ref={scrollRef}>
               <div className="space-y-4">
-                {messagesLoading ? (
+                {messagesError ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <AlertTriangle className="h-8 w-8 text-destructive mb-2" />
+                    <p className="font-medium text-destructive">Failed to load messages</p>
+                    <p className="text-sm text-muted-foreground">{messagesError instanceof Error ? messagesError.message : "Unknown error"}</p>
+                    <Button variant="outline" size="sm" className="mt-4" onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/chat", selectedCaseId] })}>
+                      Retry
+                    </Button>
+                  </div>
+                ) : messagesLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
                 ) : messages && messages.length > 0 ? (
-                  messages.map((msg) => (
+                  messages.map((msg: any) => (
                     <MessageBubble key={msg.id} message={msg} onCopy={handleCopy} />
                   ))
                 ) : (
@@ -283,7 +320,7 @@ export default function Chat() {
           <div className="flex items-center gap-3">
             <AlertTriangle className="h-4 w-4 text-primary flex-shrink-0" />
             <p className="text-xs text-muted-foreground">
-              This is an AI assistant providing decision support. All recommendations 
+              This is an AI assistant providing decision support. All recommendations
               must be reviewed by qualified healthcare professionals before clinical action.
             </p>
           </div>

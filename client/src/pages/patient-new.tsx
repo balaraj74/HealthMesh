@@ -133,13 +133,19 @@ export default function PatientNew() {
       const response = await apiRequest("POST", "/api/patients", data);
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
       toast({
         title: "Patient created",
         description: "The patient record has been saved successfully.",
       });
-      navigate(`/patients/${data.id}`);
+      // Extract patient ID from response.data
+      const patientId = response.data?.id || response.id;
+      if (patientId) {
+        navigate(`/patients/${patientId}`);
+      } else {
+        navigate("/patients");
+      }
     },
     onError: () => {
       toast({

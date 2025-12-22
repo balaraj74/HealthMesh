@@ -42,39 +42,39 @@ import { useToast } from "@/hooks/use-toast";
 import type { ClinicalCase, Patient, AgentType, AgentOutput, Recommendation, RiskAlert } from "@shared/schema";
 
 const agentInfo: Record<AgentType, { name: string; icon: typeof Brain; color: string; description: string }> = {
-  "patient-context": { 
-    name: "Patient Context Agent", 
-    icon: Users, 
+  "patient-context": {
+    name: "Patient Context Agent",
+    icon: Users,
     color: "text-blue-500",
     description: "Analyzes patient demographics, medical history, and current conditions"
   },
-  "labs-reports": { 
-    name: "Labs & Reports Agent", 
-    icon: Beaker, 
+  "labs-reports": {
+    name: "Labs & Reports Agent",
+    icon: Beaker,
     color: "text-green-500",
     description: "Processes lab results, identifies abnormalities and critical values"
   },
-  "research-guidelines": { 
-    name: "Research & Guidelines Agent", 
-    icon: FileText, 
+  "research-guidelines": {
+    name: "Research & Guidelines Agent",
+    icon: FileText,
     color: "text-purple-500",
     description: "Searches medical literature and clinical guidelines for evidence"
   },
-  "risk-safety": { 
-    name: "Risk & Safety Agent", 
-    icon: Shield, 
+  "risk-safety": {
+    name: "Risk & Safety Agent",
+    icon: Shield,
     color: "text-red-500",
     description: "Checks drug interactions, contraindications, and safety concerns"
   },
-  "clinician-interaction": { 
-    name: "Clinician Interaction Agent", 
-    icon: MessageSquare, 
+  "clinician-interaction": {
+    name: "Clinician Interaction Agent",
+    icon: MessageSquare,
     color: "text-orange-500",
     description: "Provides conversational interface for clarification and feedback"
   },
-  "orchestrator": { 
-    name: "Central Orchestrator", 
-    icon: Brain, 
+  "orchestrator": {
+    name: "Central Orchestrator",
+    icon: Brain,
     color: "text-primary",
     description: "Coordinates all agents and synthesizes final recommendations"
   },
@@ -130,7 +130,7 @@ function AgentOutputCard({ output }: { output: AgentOutput }) {
         <CollapsibleContent>
           <CardContent className="pt-0">
             <Separator className="mb-4" />
-            
+
             {output.summary && (
               <div className="mb-4">
                 <h4 className="text-sm font-medium mb-2">Summary</h4>
@@ -169,15 +169,15 @@ function AgentOutputCard({ output }: { output: AgentOutput }) {
   );
 }
 
-function RecommendationCard({ 
-  recommendation, 
-  onFeedback 
-}: { 
+function RecommendationCard({
+  recommendation,
+  onFeedback
+}: {
   recommendation: Recommendation;
   onFeedback: (id: string, status: "accepted" | "rejected", feedback?: string) => void;
 }) {
-  const confidenceColor = recommendation.confidence >= 80 ? "text-green-500" : 
-                          recommendation.confidence >= 50 ? "text-yellow-500" : "text-red-500";
+  const confidenceColor = recommendation.confidence >= 80 ? "text-green-500" :
+    recommendation.confidence >= 50 ? "text-yellow-500" : "text-red-500";
 
   return (
     <Card data-testid={`card-recommendation-${recommendation.id}`}>
@@ -223,7 +223,7 @@ function RecommendationCard({
       </CardHeader>
       <CardContent>
         <p className="text-sm mb-4">{recommendation.content}</p>
-        
+
         <Accordion type="single" collapsible>
           <AccordionItem value="evidence">
             <AccordionTrigger className="text-sm">
@@ -316,9 +316,9 @@ function PatientSummaryPanel({ patient }: { patient: Patient }) {
           <p className="text-sm text-muted-foreground">Date of Birth</p>
           <p>{patient.demographics.dateOfBirth}</p>
         </div>
-        
+
         <Separator />
-        
+
         <div>
           <p className="text-sm font-medium mb-2">Active Conditions ({patient.diagnoses.length})</p>
           <div className="space-y-1">
@@ -332,13 +332,13 @@ function PatientSummaryPanel({ patient }: { patient: Patient }) {
             )}
           </div>
         </div>
-        
+
         <div>
           <p className="text-sm font-medium mb-2">Allergies ({patient.allergies.length})</p>
           <div className="space-y-1">
             {patient.allergies.map((allergy) => (
-              <Badge 
-                key={allergy.id} 
+              <Badge
+                key={allergy.id}
                 variant={allergy.severity === "severe" || allergy.severity === "life-threatening" ? "destructive" : "secondary"}
                 className="mr-1 mb-1 text-xs"
               >
@@ -347,7 +347,7 @@ function PatientSummaryPanel({ patient }: { patient: Patient }) {
             ))}
           </div>
         </div>
-        
+
         <div>
           <p className="text-sm font-medium mb-2">Current Medications ({patient.medications.length})</p>
           <div className="space-y-1 text-sm">
@@ -367,17 +367,22 @@ function PatientSummaryPanel({ patient }: { patient: Patient }) {
 }
 
 export default function CaseDetail() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const id = params.id;
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
-  const { data: caseData, isLoading: caseLoading } = useQuery<ClinicalCase>({
+  const { data: caseData, isLoading: caseLoading, isError, error } = useQuery<{ success: boolean; data: ClinicalCase }, Error, ClinicalCase>({
     queryKey: ["/api/cases", id],
+    enabled: !!id,
+    select: (response) => response.data,
+    retry: false,
   });
 
-  const { data: patient, isLoading: patientLoading } = useQuery<Patient>({
+  const { data: patient, isLoading: patientLoading } = useQuery<{ success: boolean; data: Patient }, Error, Patient>({
     queryKey: ["/api/patients", caseData?.patientId],
     enabled: !!caseData?.patientId,
+    select: (response) => response.data,
   });
 
   const analyzeMutation = useMutation({
@@ -411,6 +416,18 @@ export default function CaseDetail() {
     feedbackMutation.mutate({ recId, status });
   };
 
+  if (!id) {
+    return (
+      <div className="p-6 text-center">
+        <h1 className="text-2xl font-semibold mb-2">Invalid Case ID</h1>
+        <p className="text-muted-foreground mb-4">No case ID was provided in the URL.</p>
+        <Button asChild>
+          <Link href="/cases">Back to Cases</Link>
+        </Button>
+      </div>
+    );
+  }
+
   if (caseLoading) {
     return (
       <div className="p-6">
@@ -426,11 +443,13 @@ export default function CaseDetail() {
     );
   }
 
-  if (!caseData) {
+  if (isError || !caseData) {
     return (
       <div className="p-6 text-center">
-        <h1 className="text-2xl font-semibold mb-2">Case Not Found</h1>
-        <p className="text-muted-foreground mb-4">The requested case could not be found.</p>
+        <h1 className="text-2xl font-semibold mb-2">Error Loading Case</h1>
+        <p className="text-muted-foreground mb-4">
+          {error?.message || "The requested case could not be found or you don't have permission to view it."}
+        </p>
         <Button asChild>
           <Link href="/cases">Back to Cases</Link>
         </Button>
@@ -445,10 +464,16 @@ export default function CaseDetail() {
     "review-ready": "bg-green-500",
     reviewed: "bg-purple-500",
     closed: "bg-gray-400",
+    active: "bg-green-500",
   };
 
-  const criticalAlerts = caseData.riskAlerts?.filter(a => a.severity === "critical") ?? [];
-  const warningAlerts = caseData.riskAlerts?.filter(a => a.severity === "warning") ?? [];
+  // Safe access to arrays
+  const recommendations = caseData.recommendations ?? [];
+  const riskAlerts = caseData.riskAlerts ?? [];
+  const agentOutputs = caseData.agentOutputs ?? [];
+
+  const criticalAlerts = riskAlerts.filter(a => a.severity === "critical");
+  const warningAlerts = riskAlerts.filter(a => a.severity === "warning");
 
   return (
     <div className="p-6">
@@ -460,7 +485,7 @@ export default function CaseDetail() {
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-3xl font-semibold">Case #{caseData.id.slice(0, 8)}</h1>
             <Badge variant="secondary" className="gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${statusColors[caseData.status]}`} />
+              <span className={`w-2 h-2 rounded-full ${statusColors[caseData.status] || "bg-gray-500"}`} />
               {caseData.status.replace("-", " ")}
             </Badge>
           </div>
@@ -510,15 +535,15 @@ export default function CaseDetail() {
               <TabsTrigger value="agents" data-testid="tab-agents">Agent Analysis</TabsTrigger>
               <TabsTrigger value="recommendations" data-testid="tab-recommendations">
                 Recommendations
-                {caseData.recommendations.length > 0 && (
-                  <Badge variant="secondary" className="ml-2">{caseData.recommendations.length}</Badge>
+                {recommendations.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">{recommendations.length}</Badge>
                 )}
               </TabsTrigger>
               <TabsTrigger value="alerts" data-testid="tab-alerts">
                 Risk Alerts
-                {caseData.riskAlerts.length > 0 && (
+                {riskAlerts.length > 0 && (
                   <Badge variant={criticalAlerts.length > 0 ? "destructive" : "secondary"} className="ml-2">
-                    {caseData.riskAlerts.length}
+                    {riskAlerts.length}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -530,7 +555,7 @@ export default function CaseDetail() {
                   <CardTitle>Clinical Question</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm">{caseData.clinicalQuestion}</p>
+                  <p className="text-sm">{caseData.clinicalQuestion || caseData.description || "No clinical question provided."}</p>
                 </CardContent>
               </Card>
 
@@ -551,29 +576,33 @@ export default function CaseDetail() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {caseData.agentOutputs.map((output) => {
-                      const info = agentInfo[output.agentType];
-                      const Icon = info.icon;
-                      return (
-                        <div key={output.agentType} className="flex items-center gap-3 p-3 rounded-md bg-muted/50">
-                          <Icon className={`h-5 w-5 ${info.color}`} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{info.name.replace(" Agent", "")}</p>
-                            <p className="text-xs text-muted-foreground capitalize">{output.status}</p>
+                    {agentOutputs.length === 0 ? (
+                      <p className="text-sm text-muted-foreground col-span-full">No agents active.</p>
+                    ) : (
+                      agentOutputs.map((output) => {
+                        const info = agentInfo[output.agentType];
+                        const Icon = info.icon;
+                        return (
+                          <div key={output.agentType} className="flex items-center gap-3 p-3 rounded-md bg-muted/50">
+                            <Icon className={`h-5 w-5 ${info.color}`} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{info.name.replace(" Agent", "")}</p>
+                              <p className="text-xs text-muted-foreground capitalize">{output.status}</p>
+                            </div>
+                            {output.confidence !== undefined && (
+                              <Badge variant="outline" className="text-xs">{output.confidence}%</Badge>
+                            )}
                           </div>
-                          {output.confidence !== undefined && (
-                            <Badge variant="outline" className="text-xs">{output.confidence}%</Badge>
-                          )}
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                    )}
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="agents" className="space-y-4">
-              {caseData.agentOutputs.length === 0 ? (
+              {agentOutputs.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -590,14 +619,14 @@ export default function CaseDetail() {
                   </CardContent>
                 </Card>
               ) : (
-                caseData.agentOutputs.map((output) => (
+                agentOutputs.map((output) => (
                   <AgentOutputCard key={output.agentType} output={output} />
                 ))
               )}
             </TabsContent>
 
             <TabsContent value="recommendations" className="space-y-4">
-              {caseData.recommendations.length === 0 ? (
+              {recommendations.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -608,10 +637,10 @@ export default function CaseDetail() {
                   </CardContent>
                 </Card>
               ) : (
-                caseData.recommendations.map((rec) => (
-                  <RecommendationCard 
-                    key={rec.id} 
-                    recommendation={rec} 
+                recommendations.map((rec) => (
+                  <RecommendationCard
+                    key={rec.id}
+                    recommendation={rec}
                     onFeedback={handleFeedback}
                   />
                 ))
@@ -619,7 +648,7 @@ export default function CaseDetail() {
             </TabsContent>
 
             <TabsContent value="alerts" className="space-y-4">
-              {caseData.riskAlerts.length === 0 ? (
+              {riskAlerts.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
@@ -637,7 +666,7 @@ export default function CaseDetail() {
                   {warningAlerts.map((alert) => (
                     <RiskAlertCard key={alert.id} alert={alert} />
                   ))}
-                  {caseData.riskAlerts
+                  {riskAlerts
                     .filter(a => a.severity === "info")
                     .map((alert) => (
                       <RiskAlertCard key={alert.id} alert={alert} />
@@ -650,7 +679,7 @@ export default function CaseDetail() {
 
         <div className="space-y-6">
           {patient && <PatientSummaryPanel patient={patient} />}
-          
+
           <Card className="bg-primary/5 border-primary/20">
             <CardContent className="py-4">
               <div className="flex items-start gap-3">
@@ -658,7 +687,7 @@ export default function CaseDetail() {
                 <div>
                   <p className="text-sm font-medium">Decision Support Only</p>
                   <p className="text-xs text-muted-foreground">
-                    This system provides AI-assisted recommendations. 
+                    This system provides AI-assisted recommendations.
                     All outputs must be reviewed by qualified healthcare professionals.
                   </p>
                 </div>

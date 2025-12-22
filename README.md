@@ -13,12 +13,18 @@ A multi-agent healthcare orchestration system that provides real-time clinical d
   - ⚠️ Risk & Safety Agent - Identifies contraindications and drug interactions
   - 🧠 Orchestrator Agent - Synthesizes all inputs for clinical recommendations
 
+- **Multi-Tenant SaaS Architecture**:
+  - Azure Entra ID (Azure AD) authentication
+  - Tenant-isolated data access
+  - Automatic user provisioning
+  - Enterprise-ready security
+
 - **Azure-Powered Backend**:
   - Azure OpenAI (GPT-4o) for clinical reasoning
   - Azure Health Data Services (FHIR R4) for patient data
   - Azure Document Intelligence for lab report extraction
   - Azure Cognitive Search for medical guidelines RAG
-  - Azure Cosmos DB for persistent storage
+  - Azure SQL Database for multi-tenant data
   - Azure Monitor for audit trails
 
 - **Healthcare-Safe Design**:
@@ -39,33 +45,72 @@ A multi-agent healthcare orchestration system that provides real-time clinical d
 ## 📋 Prerequisites
 
 - Node.js 20+
-- Azure subscription with the following services:
+- Azure subscription ([Create one for free](https://azure.microsoft.com/free/))
+- Azure services:
+  - Azure Entra ID (for authentication)
   - Azure OpenAI (GPT-4o deployment)
-  - Azure Health Data Services
-  - Azure Cognitive Search
-  - Azure Document Intelligence
-  - Azure Cosmos DB
-  - Azure Application Insights
+  - Azure SQL Database (for multi-tenant data)
+  - Azure Health Data Services (optional)
+  - Azure Cognitive Search (for RAG)
+  - Azure Document Intelligence (for lab reports)
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-### Local Development
+### Step 1: Install Dependencies
 
 ```bash
-# Install dependencies
 npm install
+```
 
-# Copy environment template
-cp .env.azure.example .env
+### Step 2: Configure Azure AD Authentication
 
-# Configure Azure credentials in .env
-# Then start development server
+See **[AZURE_AD_SETUP.md](./AZURE_AD_SETUP.md)** for complete instructions.
+
+**Quick setup:**
+1. Create app registration in [Azure Portal](https://portal.azure.com)
+2. Add redirect URI: `http://localhost:3000/`
+3. Enable ID tokens and Access tokens
+4. Update `.env` with your credentials:
+
+```env
+AZURE_AD_TENANT_ID=your-tenant-id
+AZURE_AD_CLIENT_ID=your-client-id
+VITE_AZURE_AD_TENANT_ID=your-tenant-id
+VITE_AZURE_AD_CLIENT_ID=your-client-id
+```
+
+### Step 3: Start Development Server
+
+```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5000`
+The application will be available at **http://localhost:3000**
 
-### Azure Deployment (One-Click)
+### Step 4: Sign In
+
+1. Open http://localhost:3000
+2. Click "Sign In with Microsoft"
+3. Enter your Microsoft credentials
+4. Grant consent for permissions
+
+### Development Mode (No Azure Setup Required)
+
+For testing without Azure configuration:
+
+```env
+# In .env file
+DEV_BYPASS_AUTH=true
+```
+
+This bypasses authentication and uses mock tenant data. Perfect for:
+- Local UI development
+- Testing without Azure subscription
+- Demo purposes
+
+⚠️ **Remove `DEV_BYPASS_AUTH` before production deployment!**
+
+### Azure Deployment (Production)
 
 ```bash
 # Set deployment configuration

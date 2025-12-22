@@ -1,7 +1,23 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+
+// ============================================================================
+// ENVIRONMENT VERIFICATION - Log Entra ID configuration at startup
+// ============================================================================
+console.log("╔════════════════════════════════════════════════════════════╗");
+console.log("║ 🔐 Entra ID Configuration Check                            ║");
+console.log("╠════════════════════════════════════════════════════════════╣");
+console.log(`║ BACKEND TENANT: ${process.env.AZURE_AD_TENANT_ID || "❌ NOT SET"}`);
+console.log(`║ BACKEND CLIENT: ${process.env.AZURE_AD_CLIENT_ID || "❌ NOT SET"}`);
+console.log("╚════════════════════════════════════════════════════════════╝");
+
+if (!process.env.AZURE_AD_TENANT_ID || !process.env.AZURE_AD_CLIENT_ID) {
+  console.error("❌ CRITICAL: Azure AD configuration missing in .env!");
+  console.error("   Please set AZURE_AD_TENANT_ID and AZURE_AD_CLIENT_ID");
+}
 
 const app = express();
 const httpServer = createServer(app);

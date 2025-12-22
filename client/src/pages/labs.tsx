@@ -136,8 +136,9 @@ function LabReportDetailDialog({ report }: { report: LabReport }) {
 export default function Labs() {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: reports, isLoading } = useQuery<LabReport[]>({
-    queryKey: ["/api/lab-reports"],
+  const { data: reports, isLoading } = useQuery<{ success: boolean; data: LabReport[] }>({
+    queryKey: ["/api/labs"],
+    select: (response) => response.data,
   });
 
   const filteredReports = reports?.filter((report) =>

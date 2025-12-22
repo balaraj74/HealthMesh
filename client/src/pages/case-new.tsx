@@ -422,8 +422,9 @@ export default function CaseNew() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const { toast } = useToast();
 
-  const { data: patients, isLoading: patientsLoading } = useQuery<Patient[]>({
+  const { data: patients, isLoading: patientsLoading } = useQuery<{ success: boolean; data: Patient[] }>({
     queryKey: ["/api/patients"],
+    select: (response) => response.data,
   });
 
   const form = useForm<CaseFormData>({

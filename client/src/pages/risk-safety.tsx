@@ -142,8 +142,9 @@ function RiskTypeSummary({ alerts }: { alerts: RiskAlert[] }) {
 }
 
 export default function RiskSafety() {
-  const { data: cases, isLoading: casesLoading } = useQuery<ClinicalCase[]>({
+  const { data: cases, isLoading: casesLoading } = useQuery<{ success: boolean; data: ClinicalCase[] }>({
     queryKey: ["/api/cases"],
+    select: (response) => response.data,
   });
 
   const allAlerts = cases?.flatMap(c => c.riskAlerts) ?? [];
