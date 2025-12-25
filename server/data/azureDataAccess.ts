@@ -46,7 +46,7 @@ export class AzureUserService {
         const result = await pool.request()
             .input("entraOid", sql.NVarChar, entraOid)
             .input("tenantId", sql.NVarChar, tenantId)
-            .query("SELECT * FROM users WHERE oid = @entraOid AND tenant_id = @tenantId");
+            .query("SELECT * FROM users WHERE entra_oid = @entraOid AND tenant_id = @tenantId");
         return result.recordset[0] || null;
     }
 
@@ -69,7 +69,7 @@ export class AzureUserService {
             .input("name", sql.NVarChar, data.name || null)
             .input("role", sql.NVarChar, data.role || "doctor")
             .query(`
-                INSERT INTO users (id, hospital_id, oid, tenant_id, email, name, role) 
+                INSERT INTO users (id, hospital_id, entra_oid, tenant_id, email, name, role) 
                 VALUES (@id, @hospitalId, @entraOid, @tenantId, @email, @name, @role)
             `);
         return { id, ...data };
