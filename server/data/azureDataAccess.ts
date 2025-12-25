@@ -222,7 +222,7 @@ export class AzureCaseService {
         const pool = await getPool();
         const result = await pool.request()
             .input("hospitalId", sql.NVarChar, hospitalId)
-            .query("SELECT * FROM cases WHERE hospital_id = @hospitalId ORDER BY created_at DESC");
+            .query("SELECT * FROM clinical_cases WHERE hospital_id = @hospitalId ORDER BY created_at DESC");
         return result.recordset.map(this.mapCase);
     }
 
@@ -231,7 +231,7 @@ export class AzureCaseService {
         const result = await pool.request()
             .input("hospitalId", sql.NVarChar, hospitalId)
             .input("caseId", sql.NVarChar, caseId)
-            .query("SELECT * FROM cases WHERE id = @caseId AND hospital_id = @hospitalId");
+            .query("SELECT * FROM clinical_cases WHERE id = @caseId AND hospital_id = @hospitalId");
         return result.recordset[0] ? this.mapCase(result.recordset[0]) : null;
     }
 
@@ -240,7 +240,7 @@ export class AzureCaseService {
         const result = await pool.request()
             .input("hospitalId", sql.NVarChar, hospitalId)
             .input("patientId", sql.NVarChar, patientId)
-            .query("SELECT * FROM cases WHERE patient_id = @patientId AND hospital_id = @hospitalId ORDER BY created_at DESC");
+            .query("SELECT * FROM clinical_cases WHERE patient_id = @patientId AND hospital_id = @hospitalId ORDER BY created_at DESC");
         return result.recordset.map(this.mapCase);
     }
 
@@ -252,15 +252,14 @@ export class AzureCaseService {
             .input("id", sql.NVarChar, id)
             .input("hospitalId", sql.NVarChar, hospitalId)
             .input("patientId", sql.NVarChar, data.patientId)
-            .input("caseType", sql.NVarChar, data.caseType || null)
-            .input("title", sql.NVarChar, data.title || null)
-            .input("description", sql.NVarChar, data.description || null)
+            .input("assignedDoctorId", sql.NVarChar, userId)
+            .input("caseType", sql.NVarChar, data.caseType || "general")
+            .input("chiefComplaint", sql.NVarChar, data.description || data.chiefComplaint || null)
             .input("status", sql.NVarChar, data.status || "active")
             .input("priority", sql.NVarChar, data.priority || "medium")
-            .input("createdByUserId", sql.NVarChar, userId)
             .query(`
-                INSERT INTO cases (id, hospital_id, patient_id, case_type, title, description, status, priority, created_by_user_id)
-                VALUES (@id, @hospitalId, @patientId, @caseType, @title, @description, @status, @priority, @createdByUserId)
+                INSERT INTO clinical_cases (id, hospital_id, patient_id, assigned_doctor_id, case_type, chief_complaint, status, priority)
+                VALUES (@id, @hospitalId, @patientId, @assignedDoctorId, @caseType, @chiefComplaint, @status, @priority)
             `);
 
         return this.getCase(hospitalId, id);
@@ -273,12 +272,14 @@ export class AzureCaseService {
             .input("caseId", sql.NVarChar, caseId)
             .input("status", sql.NVarChar, data.status || null)
             .input("priority", sql.NVarChar, data.priority || null)
-            .input("aiAnalysis", sql.NVarChar, data.aiAnalysis || null)
+            .input("diagnosis", sql.NVarChar, data.diagnosis || data.aiAnalysis || null)
+            .input("treatmentPlan", sql.NVarChar, data.treatmentPlan || null)
             .query(`
-                UPDATE cases SET 
+                UPDATE clinical_cases SET 
                     status = COALESCE(@status, status),
                     priority = COALESCE(@priority, priority),
-                    ai_analysis = COALESCE(@aiAnalysis, ai_analysis),
+                    diagnosis = COALESCE(@diagnosis, diagnosis),
+                    treatment_plan = COALESCE(@treatmentPlan, treatment_plan),
                     updated_at = GETUTCDATE()
                 WHERE id = @caseId AND hospital_id = @hospitalId
             `);
@@ -294,15 +295,15 @@ export class AzureCaseService {
 
         const totalCases = await pool.request()
             .input("hospitalId", sql.NVarChar, hospitalId)
-            .query("SELECT COUNT(*) as count FROM cases WHERE hospital_id = @hospitalId");
+            .query("SELECT COUNT(*) as count FROM clinical_cases WHERE hospital_id = @hospitalId");
 
         const activeCases = await pool.request()
             .input("hospitalId", sql.NVarChar, hospitalId)
-            .query("SELECT COUNT(*) as count FROM cases WHERE hospital_id = @hospitalId AND status = 'active'");
+            .query("SELECT COUNT(*) as count FROM clinical_cases WHERE hospital_id = @hospitalId AND status = 'active'");
 
         const recentCases = await pool.request()
             .input("hospitalId", sql.NVarChar, hospitalId)
-            .query("SELECT TOP 10 * FROM cases WHERE hospital_id = @hospitalId ORDER BY created_at DESC");
+            .query("SELECT TOP 10 * FROM clinical_cases WHERE hospital_id = @hospitalId ORDER BY created_at DESC");
 
         return {
             totalPatients: totalPatients.recordset[0]?.count || 0,
