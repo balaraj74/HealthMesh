@@ -29,6 +29,8 @@ jobs:
 
     - name: 🔨 Build application
       env:
+        VITE_AZURE_AD_CLIENT_ID: 5f575598-453d-4278-8e0f-a31fb9048256
+        VITE_AZURE_AD_TENANT_ID: 0ba0de08-9840-495b-9ba1-a219de9356b8
         VITE_AZURE_AD_REDIRECT_URI: https://healthmesh-dev-app.azurewebsites.net/login
         NODE_ENV: production
       run: npm run build
