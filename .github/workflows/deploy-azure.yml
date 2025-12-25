@@ -33,7 +33,10 @@ jobs:
         NODE_ENV: production
       run: npm run build
 
-    - name: 📁 Prepare deployment package
+    - name: 📁 Install production dependencies
+      run: npm ci --production --ignore-scripts
+
+    - name: 📦 Prepare deployment package
       run: |
         # Create a clean deployment directory
         mkdir -p deployment
@@ -41,49 +44,16 @@ jobs:
         # Copy built application
         cp -r dist deployment/
         
-        # Copy package files for Azure to recognize Node.js app
+        # Copy production node_modules
+        cp -r node_modules deployment/
+        
+        # Copy package files
         cp package.json deployment/
         cp package-lock.json deployment/
         
         # Create .deployment file to tell Azure not to build
         echo "[config]" > deployment/.deployment
         echo "SCM_DO_BUILD_DURING_DEPLOYMENT=false" >> deployment/.deployment
-        
-        # Create web.config for proper routing
-        cat > deployment/web.config << 'EOF'
-        <?xml version="1.0" encoding="utf-8"?>
-        <configuration>
-          <system.webServer>
-            <handlers>
-              <add name="iisnode" path="dist/index.cjs" verb="*" modules="iisnode"/>
-            </handlers>
-            <rewrite>
-              <rules>
-                <rule name="NodeInspector" patternSyntax="ECMAScript" stopProcessing="true">
-                  <match url="^dist/index.cjs\/debug[\/]?" />
-                </rule>
-                <rule name="StaticContent">
-                  <action type="Rewrite" url="dist/public{REQUEST_URI}"/>
-                </rule>
-                <rule name="DynamicContent">
-                  <conditions>
-                    <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
-                  </conditions>
-                  <action type="Rewrite" url="dist/index.cjs"/>
-                </rule>
-              </rules>
-            </rewrite>
-            <security>
-              <requestFiltering>
-                <hiddenSegments>
-                  <remove segment="bin"/>
-                </hiddenSegments>
-              </requestFiltering>
-            </security>
-            <httpErrors existingResponse="PassThrough" />
-          </system.webServer>
-        </configuration>
-        EOF
         
         # Zip the deployment package
         cd deployment
