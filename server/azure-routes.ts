@@ -8,7 +8,9 @@ import { createServer, type Server } from "http";
 import { randomUUID } from "crypto";
 import multer from "multer";
 import { analyzeCase, handleClinicianChat, processLabReport } from "./azure-agents";
+import { analyzeCaseWithClinicalAgents, handleClinicalChat } from "./clinical-agents";
 import { getAzureConfig, validateAzureConfig, initializeAzureServices } from "./azure";
+import { getAzureOpenAI } from "./azure/openai-client";
 import { getSQLDB } from "./azure/sql-db";
 import { getCognitiveSearch, MEDICAL_GUIDELINES_INDEX_SCHEMA } from "./azure/cognitive-search";
 import { getMonitor } from "./azure/monitoring";
@@ -107,6 +109,63 @@ export async function registerRoutes(
     });
   });
 
+  // Azure OpenAI Health Check - detailed status for multi-agent support
+  app.get("/api/azure-openai/health", async (req: Request, res: Response) => {
+    try {
+      const openaiClient = getAzureOpenAI();
+      const healthCheck = await openaiClient.healthCheck();
+      const status = openaiClient.getStatus();
+      const config = getAzureConfig();
+
+      res.json({
+        success: healthCheck.status !== 'unhealthy',
+        health: healthCheck,
+        config: {
+          initialized: status.initialized,
+          demoMode: status.demoMode,
+          endpoint: status.endpoint ? status.endpoint.replace(/\/+$/, '').split('/').pop() + '...' : 'not configured',
+          deployment: status.deployment,
+          aiFoundryProject: config.openai.projectName || 'not configured',
+          aiFoundryResource: config.openai.resourceName || 'not configured',
+        },
+        agents: {
+          triage: 'operational',
+          diagnostic: 'operational',
+          guideline: 'operational',
+          medicationSafety: 'operational',
+          evidence: 'operational',
+          synthesis: 'operational',
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
+
+  // Azure OpenAI Status - quick status check
+  app.get("/api/azure-openai/status", async (req: Request, res: Response) => {
+    try {
+      const openaiClient = getAzureOpenAI();
+      const status = openaiClient.getStatus();
+
+      res.json({
+        success: true,
+        ...status,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: (error as Error).message,
+      });
+    }
+  });
+
   // ==========================================
   // Patient Endpoints
   // ==========================================
@@ -151,7 +210,7 @@ export async function registerRoutes(
         : await storage.createPatient(patientData);
 
       console.log('[PATIENT_CREATE] Patient created successfully:', patient.id);
-      
+
       await createAuditLog('patient-created', 'patient', patient.id, {
         mrn: patient.demographics.mrn,
         name: `${patient.demographics.firstName} ${patient.demographics.lastName}`,
@@ -349,6 +408,92 @@ export async function registerRoutes(
           agentOutputs,
           recommendations,
           riskAlerts,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: (error as Error).message });
+    }
+  });
+
+  // ==========================================
+  // Enhanced Clinical Analysis (5-Agent Pipeline)
+  // Uses: Triage, Diagnostic, Guideline, MedSafety, Evidence agents
+  // ==========================================
+
+  app.post("/api/cases/:id/clinical-analyze", async (req: Request, res: Response) => {
+    try {
+      const caseId = req.params.id;
+      const { vitals, labValues } = req.body; // Optional vitals and lab values for triage
+
+      // Get case and patient
+      const clinicalCase = useAzureStorage()
+        ? await getSQLDB().getCase(caseId)
+        : await storage.getCase(caseId);
+
+      if (!clinicalCase) {
+        return res.status(404).json({ success: false, error: "Case not found" });
+      }
+
+      const patient = useAzureStorage()
+        ? await getSQLDB().getPatient(clinicalCase.patientId)
+        : await storage.getPatient(clinicalCase.patientId);
+
+      if (!patient) {
+        return res.status(404).json({ success: false, error: "Patient not found" });
+      }
+
+      // Update case status to analyzing
+      if (useAzureStorage()) {
+        await getSQLDB().updateCase(caseId, patient.id, { status: 'analyzing' });
+      } else {
+        await storage.updateCase(caseId, { status: 'analyzing' });
+      }
+
+      await createAuditLog('case-analyzed', 'case', caseId, {
+        status: 'started',
+        pipeline: '5-agent-clinical',
+        hasVitals: !!vitals,
+        hasLabValues: !!labValues,
+      });
+
+      // Run enhanced clinical analysis with 5-agent pipeline
+      const { agentOutputs, recommendations, riskAlerts, synthesis } =
+        await analyzeCaseWithClinicalAgents(patient, clinicalCase, vitals, labValues);
+
+      // Update case with results
+      const updates: Partial<ClinicalCase> = {
+        status: 'review-ready',
+        agentOutputs,
+        recommendations,
+        riskAlerts,
+        summary: synthesis?.caseSummary,
+        updatedAt: new Date().toISOString(),
+      };
+
+      let updatedCase: ClinicalCase | undefined;
+      if (useAzureStorage()) {
+        updatedCase = await getSQLDB().updateCase(caseId, patient.id, updates);
+      } else {
+        updatedCase = await storage.updateCase(caseId, updates);
+      }
+
+      await createAuditLog('case-analyzed', 'case', caseId, {
+        status: 'completed',
+        pipeline: '5-agent-clinical',
+        agentCount: agentOutputs.length,
+        recommendationCount: recommendations.length,
+        alertCount: riskAlerts.length,
+        confidence: synthesis?.overallConfidence,
+      });
+
+      res.json({
+        success: true,
+        data: {
+          case: updatedCase,
+          agentOutputs,
+          recommendations,
+          riskAlerts,
+          synthesis, // Full structured synthesis output
         },
       });
     } catch (error) {

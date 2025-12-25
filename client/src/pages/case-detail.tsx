@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronRight,
   ExternalLink,
+  Sparkles,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/collapsible";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { ClinicalSynthesisDisplay } from "@/components/clinical-synthesis";
 import type { ClinicalCase, Patient, AgentType, AgentOutput, Recommendation, RiskAlert } from "@shared/schema";
 
 const agentInfo: Record<AgentType, { name: string; icon: typeof Brain; color: string; description: string }> = {
@@ -371,6 +373,7 @@ export default function CaseDetail() {
   const id = params.id;
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const [clinicalSynthesis, setClinicalSynthesis] = useState<any>(null);
 
   const { data: caseData, isLoading: caseLoading, isError, error } = useQuery<{ success: boolean; data: ClinicalCase }, Error, ClinicalCase>({
     queryKey: ["/api/cases", id],
@@ -395,6 +398,33 @@ export default function CaseDetail() {
       toast({
         title: "Analysis started",
         description: "The AI agents are now analyzing this case.",
+      });
+    },
+  });
+
+  // Enhanced Clinical Analysis with 5-Agent Pipeline
+  const clinicalAnalyzeMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/cases/${id}/clinical-analyze`, {
+        // Optional: Could add vitals and labValues here from a form
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", id] });
+      if (data.data?.synthesis) {
+        setClinicalSynthesis(data.data.synthesis);
+      }
+      toast({
+        title: "Clinical Analysis Complete",
+        description: "5-agent clinical intelligence pipeline has finished.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "Failed to run clinical analysis.",
+        variant: "destructive",
       });
     },
   });
@@ -496,15 +526,35 @@ export default function CaseDetail() {
             <Button
               onClick={() => analyzeMutation.mutate()}
               disabled={analyzeMutation.isPending}
+              variant="outline"
               data-testid="button-start-analysis"
             >
               <Brain className="h-4 w-4 mr-2" />
-              {analyzeMutation.isPending ? "Starting..." : "Start Analysis"}
+              {analyzeMutation.isPending ? "Starting..." : "Quick Analysis"}
             </Button>
           )}
+          <Button
+            onClick={() => clinicalAnalyzeMutation.mutate()}
+            disabled={clinicalAnalyzeMutation.isPending}
+            className="relative overflow-hidden bg-gradient-to-r from-[#0078D4] via-[#106EBE] to-[#005A9E] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed border border-white/10"
+            data-testid="button-clinical-analysis"
+          >
+            <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 opacity-0 hover:opacity-100 transition-opacity duration-300" />
+            <Sparkles className="h-4 w-4 mr-2 relative z-10" />
+            <span className="relative z-10">
+              {clinicalAnalyzeMutation.isPending ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin h-3 w-3 border-2 border-white/30 border-t-white rounded-full" />
+                  Analyzing...
+                </span>
+              ) : (
+                "AI Clinical Analysis"
+              )}
+            </span>
+          </Button>
           <Button variant="outline" data-testid="button-download-report">
             <Download className="h-4 w-4 mr-2" />
-            Download Report
+            Export Report
           </Button>
         </div>
       </div>
@@ -532,6 +582,10 @@ export default function CaseDetail() {
           <Tabs defaultValue="overview" className="space-y-6">
             <TabsList>
               <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+              <TabsTrigger value="synthesis" data-testid="tab-synthesis" className="gap-1">
+                <Sparkles className="h-3 w-3" />
+                Clinical Synthesis
+              </TabsTrigger>
               <TabsTrigger value="agents" data-testid="tab-agents">Agent Analysis</TabsTrigger>
               <TabsTrigger value="recommendations" data-testid="tab-recommendations">
                 Recommendations
@@ -599,6 +653,26 @@ export default function CaseDetail() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="synthesis" className="space-y-4">
+              <ClinicalSynthesisDisplay
+                synthesis={clinicalSynthesis}
+                isLoading={clinicalAnalyzeMutation.isPending}
+              />
+              {!clinicalSynthesis && !clinicalAnalyzeMutation.isPending && (
+                <div className="flex justify-center py-8">
+                  <Button
+                    onClick={() => clinicalAnalyzeMutation.mutate()}
+                    size="lg"
+                    className="relative overflow-hidden bg-gradient-to-r from-[#0078D4] via-[#106EBE] to-[#005A9E] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border border-white/10 px-8 py-6 text-base"
+                  >
+                    <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 opacity-0 hover:opacity-100 transition-opacity duration-300" />
+                    <Sparkles className="h-5 w-5 mr-3 relative z-10" />
+                    <span className="relative z-10">Run AI Clinical Analysis</span>
+                  </Button>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="agents" className="space-y-4">

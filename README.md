@@ -6,12 +6,19 @@ A multi-agent healthcare orchestration system that provides real-time clinical d
 
 ## 🌟 Key Features
 
-- **Multi-Agent AI Architecture** - 5 specialized AI agents working in concert:
-  - 📋 Patient Context Agent - Synthesizes patient history
-  - 🔬 Labs & Reports Agent - Extracts insights from lab data
-  - 📚 Research Guidelines Agent - RAG-powered evidence-based recommendations
-  - ⚠️ Risk & Safety Agent - Identifies contraindications and drug interactions
-  - 🧠 Orchestrator Agent - Synthesizes all inputs for clinical recommendations
+- **5-Agent Clinical Intelligence Pipeline** - Production-grade multi-agent system:
+  - 🚨 **Triage Agent** - NEWS2/SOFA-lite scoring, risk classification (Low/Moderate/High/Critical)
+  - 🩺 **Diagnostic Agent** - Ranked differential diagnoses with supporting/contradictory findings
+  - 📋 **Guideline Agent** - Maps to NCCN, WHO, ICMR, ADA, ACC/AHA, IDSA guidelines
+  - 💊 **Medication Safety Agent** - Drug interactions, contraindications, allergy cross-reactivity
+  - 📚 **Evidence Agent** - RAG-powered clinical research retrieval with evidence grading
+  - 🧠 **Synthesis Orchestrator** - Unified output with explainability panel
+
+- **Transparent & Explainable AI**:
+  - Step-by-step reasoning chains
+  - Confidence scores per agent and overall
+  - Missing data identification
+  - Clinical disclaimers
 
 - **Multi-Tenant SaaS Architecture**:
   - Azure Entra ID (Azure AD) authentication
@@ -32,6 +39,7 @@ A multi-agent healthcare orchestration system that provides real-time clinical d
   - Structured outputs with evidence citations
   - Clinician-in-the-loop decision making
   - HIPAA-ready architecture
+
 
 ## 🏗️ Tech Stack
 
@@ -231,7 +239,8 @@ APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=...
 - `GET /api/cases/:id` - Get case by ID
 - `POST /api/cases` - Create new case
 - `PUT /api/cases/:id` - Update case
-- `POST /api/cases/:id/analyze` - Run AI analysis
+- `POST /api/cases/:id/analyze` - Run basic AI analysis
+- `POST /api/cases/:id/clinical-analyze` - **NEW**: Run 5-agent clinical intelligence pipeline (with optional vitals/labs)
 
 ### Lab Reports
 - `GET /api/cases/:id/lab-reports` - Get case lab reports

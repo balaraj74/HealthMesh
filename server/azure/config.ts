@@ -4,13 +4,16 @@
  */
 
 export interface AzureConfig {
-  // Azure OpenAI
+  // Azure OpenAI / Azure AI Foundry
   openai: {
     endpoint: string;
     apiKey: string;
     apiVersion: string;
     deploymentName: string;
     embeddingDeployment: string;
+    // Azure AI Foundry project settings
+    resourceName?: string;
+    projectName?: string;
   };
 
   // Azure Health Data Services (FHIR)
@@ -87,6 +90,9 @@ export function loadAzureConfig(): AzureConfig {
       apiVersion: getEnvOrDefault('AZURE_OPENAI_API_VERSION', '2024-08-01-preview'),
       deploymentName: getEnvOrDefault('AZURE_OPENAI_DEPLOYMENT_NAME', 'gpt-4o'),
       embeddingDeployment: getEnvOrDefault('AZURE_OPENAI_EMBEDDING_DEPLOYMENT', 'text-embedding-ada-002'),
+      // Azure AI Foundry project settings
+      resourceName: process.env.AZURE_AI_FOUNDRY_RESOURCE,
+      projectName: process.env.AZURE_AI_FOUNDRY_PROJECT,
     },
     fhir: {
       endpoint: getEnvOrDefault('AZURE_FHIR_ENDPOINT', ''),

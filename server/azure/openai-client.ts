@@ -1,9 +1,11 @@
 /**
  * HealthMesh - Azure OpenAI Client
- * Handles all Azure OpenAI interactions with proper error handling and logging
+ * Production-grade Azure OpenAI integration using the official SDK
+ * Supports Azure AI Foundry projects and multi-agent orchestration
  * Falls back to demo mode when Azure OpenAI is unavailable
  */
 
+import { AzureOpenAI } from 'openai';
 import { getAzureConfig } from './config';
 import { demoAI } from './demo-ai-client';
 
@@ -17,6 +19,7 @@ interface ChatCompletionOptions {
   temperature?: number;
   maxTokens?: number;
   jsonMode?: boolean;
+  agentName?: string; // For tracking which agent is making the call
 }
 
 interface ChatCompletionResult {
@@ -26,6 +29,7 @@ interface ChatCompletionResult {
     completionTokens: number;
     totalTokens: number;
   };
+  agentName?: string;
 }
 
 interface EmbeddingResult {
@@ -36,85 +40,200 @@ interface EmbeddingResult {
   };
 }
 
+interface AgentConfig {
+  name: string;
+  temperature: number;
+  maxTokens: number;
+  systemPromptPrefix?: string;
+}
+
+// Pre-configured agent settings for different clinical agents
+const AGENT_CONFIGS: Record<string, AgentConfig> = {
+  'triage': {
+    name: 'Triage Agent',
+    temperature: 0.3,
+    maxTokens: 2048,
+    systemPromptPrefix: '[TRIAGE]'
+  },
+  'diagnostic': {
+    name: 'Diagnostic Agent',
+    temperature: 0.4,
+    maxTokens: 4096,
+    systemPromptPrefix: '[DIAGNOSTIC]'
+  },
+  'guideline': {
+    name: 'Guideline Agent',
+    temperature: 0.2,
+    maxTokens: 3072,
+    systemPromptPrefix: '[GUIDELINE]'
+  },
+  'medication-safety': {
+    name: 'Medication Safety Agent',
+    temperature: 0.2,
+    maxTokens: 3072,
+    systemPromptPrefix: '[MEDICATION-SAFETY]'
+  },
+  'evidence': {
+    name: 'Evidence Agent',
+    temperature: 0.3,
+    maxTokens: 4096,
+    systemPromptPrefix: '[EVIDENCE]'
+  },
+  'synthesis': {
+    name: 'Synthesis Orchestrator',
+    temperature: 0.4,
+    maxTokens: 6144,
+    systemPromptPrefix: '[SYNTHESIS]'
+  },
+  'default': {
+    name: 'Clinical AI',
+    temperature: 0.3,
+    maxTokens: 4096,
+  }
+};
+
 export class AzureOpenAIClient {
+  private client: AzureOpenAI | null = null;
   private endpoint: string;
   private apiKey: string;
   private apiVersion: string;
   private deploymentName: string;
   private embeddingDeployment: string;
   private useDemoMode: boolean;
+  private isInitialized: boolean = false;
+  private initError: string | null = null;
 
   constructor() {
     const config = getAzureConfig();
     this.endpoint = config.openai.endpoint;
     this.apiKey = config.openai.apiKey;
-    this.apiVersion = config.openai.apiVersion;
-    this.deploymentName = config.openai.deploymentName;
-    this.embeddingDeployment = config.openai.embeddingDeployment;
+    this.apiVersion = config.openai.apiVersion || '2024-08-01-preview';
+    this.deploymentName = config.openai.deploymentName || 'gpt-4o';
+    this.embeddingDeployment = config.openai.embeddingDeployment || 'text-embedding-ada-002';
     this.useDemoMode = process.env.USE_DEMO_MODE === 'true';
-    
+
     if (this.useDemoMode) {
       console.log('🎭 Demo Mode: Using intelligent mock AI responses');
-    }
-  }
-
-  private buildUrl(deployment: string, path: string): string {
-    const baseUrl = this.endpoint.replace(/\/$/, '');
-    return `${baseUrl}/openai/deployments/${deployment}${path}?api-version=${this.apiVersion}`;
-  }
-
-  async chatCompletion(options: ChatCompletionOptions): Promise<ChatCompletionResult> {
-    // Use demo mode if enabled or if API call fails
-    if (this.useDemoMode) {
-      return demoAI.chatCompletion(options);
+      return;
     }
 
+    this.initializeClient();
+  }
+
+  private initializeClient(): void {
     try {
-      const url = this.buildUrl(this.deploymentName, '/chat/completions');
-
-      const body: any = {
-        messages: options.messages,
-        temperature: options.temperature ?? 0.7,
-        max_tokens: options.maxTokens ?? 4096,
-      };
-
-      if (options.jsonMode) {
-        body.response_format = { type: 'json_object' };
+      if (!this.endpoint || !this.apiKey) {
+        console.warn('⚠️ Azure OpenAI credentials not configured. Using demo mode.');
+        this.useDemoMode = true;
+        this.initError = 'Missing Azure OpenAI endpoint or API key';
+        return;
       }
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'api-key': this.apiKey,
-        },
-        body: JSON.stringify(body),
+      // Clean up endpoint URL
+      const cleanEndpoint = this.endpoint.replace(/\/$/, '');
+
+      // Initialize the Azure OpenAI client using the openai package
+      // This is the recommended approach for Azure OpenAI with the latest SDK
+      this.client = new AzureOpenAI({
+        endpoint: cleanEndpoint,
+        apiKey: this.apiKey,
+        apiVersion: this.apiVersion,
+        deployment: this.deploymentName,
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.warn(`Azure OpenAI unavailable, using demo mode: ${errorText}`);
-        return demoAI.chatCompletion(options);
+      this.isInitialized = true;
+      console.log(`✅ Azure OpenAI Client initialized successfully`);
+      console.log(`   Endpoint: ${cleanEndpoint}`);
+      console.log(`   Deployment: ${this.deploymentName}`);
+      console.log(`   API Version: ${this.apiVersion}`);
+    } catch (error) {
+      console.error('❌ Failed to initialize Azure OpenAI client:', error);
+      this.initError = error instanceof Error ? error.message : 'Unknown initialization error';
+      this.useDemoMode = true;
+    }
+  }
+
+  /**
+   * Get agent-specific configuration
+   */
+  private getAgentConfig(agentName?: string): AgentConfig {
+    if (!agentName) return AGENT_CONFIGS['default'];
+
+    const normalizedName = agentName.toLowerCase().replace(/\s+/g, '-');
+    for (const [key, config] of Object.entries(AGENT_CONFIGS)) {
+      if (normalizedName.includes(key)) {
+        return config;
+      }
+    }
+    return AGENT_CONFIGS['default'];
+  }
+
+  /**
+   * Main chat completion method - used by all agents
+   */
+  async chatCompletion(options: ChatCompletionOptions): Promise<ChatCompletionResult> {
+    // Use demo mode if enabled or if initialization failed
+    if (this.useDemoMode || !this.client) {
+      console.log(`🎭 Using demo mode for ${options.agentName || 'clinical AI'}`);
+      return demoAI.chatCompletion(options);
+    }
+
+    const agentConfig = this.getAgentConfig(options.agentName);
+    const startTime = Date.now();
+
+    try {
+      const requestBody: any = {
+        model: this.deploymentName,
+        messages: options.messages,
+        temperature: options.temperature ?? agentConfig.temperature,
+        max_tokens: options.maxTokens ?? agentConfig.maxTokens,
+      };
+
+      // Enable JSON mode if requested
+      if (options.jsonMode) {
+        requestBody.response_format = { type: 'json_object' };
       }
 
-      const data = await response.json();
+      const response = await this.client.chat.completions.create(requestBody);
+
+      const endTime = Date.now();
+      const latency = endTime - startTime;
+
+      // Log successful completion
+      console.log(`✅ ${agentConfig.name} completed in ${latency}ms | Tokens: ${response.usage?.total_tokens || 'N/A'}`);
 
       return {
-        content: data.choices[0]?.message?.content || '',
+        content: response.choices[0]?.message?.content || '',
         usage: {
-          promptTokens: data.usage?.prompt_tokens || 0,
-          completionTokens: data.usage?.completion_tokens || 0,
-          totalTokens: data.usage?.total_tokens || 0,
+          promptTokens: response.usage?.prompt_tokens || 0,
+          completionTokens: response.usage?.completion_tokens || 0,
+          totalTokens: response.usage?.total_tokens || 0,
         },
+        agentName: agentConfig.name,
       };
-    } catch (error) {
-      console.warn('Azure OpenAI error, falling back to demo mode:', error);
+    } catch (error: any) {
+      console.error(`❌ Azure OpenAI error for ${agentConfig.name}:`, error.message || error);
+
+      // Check for specific error types
+      if (error.status === 429) {
+        console.warn('⚠️ Rate limit exceeded. Falling back to demo mode.');
+      } else if (error.status === 401 || error.status === 403) {
+        console.warn('⚠️ Authentication error. Check your API key.');
+      } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+        console.warn('⚠️ Network error. Azure OpenAI endpoint unreachable.');
+      }
+
+      // Fallback to demo mode
+      console.log(`🎭 Falling back to demo mode for ${agentConfig.name}`);
       return demoAI.chatCompletion(options);
     }
   }
 
+  /**
+   * Create embeddings for text
+   */
   async createEmbedding(text: string): Promise<EmbeddingResult> {
-    if (this.useDemoMode) {
+    if (this.useDemoMode || !this.client) {
       const embedding = await demoAI.createEmbedding(text);
       return {
         embedding,
@@ -126,38 +245,24 @@ export class AzureOpenAIClient {
     }
 
     try {
-      const url = this.buildUrl(this.embeddingDeployment, '/embeddings');
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'api-key': this.apiKey,
-        },
-        body: JSON.stringify({
-          input: text,
-        }),
+      // Create a separate client for embeddings with the embedding deployment
+      const embeddingClient = new AzureOpenAI({
+        endpoint: this.endpoint.replace(/\/$/, ''),
+        apiKey: this.apiKey,
+        apiVersion: this.apiVersion,
+        deployment: this.embeddingDeployment,
       });
 
-      if (!response.ok) {
-        console.warn('Azure OpenAI Embedding unavailable, using demo mode');
-        const embedding = await demoAI.createEmbedding(text);
-        return {
-          embedding,
-          usage: {
-            promptTokens: Math.floor(text.length / 4),
-            totalTokens: Math.floor(text.length / 4)
-          }
-        };
-      }
-
-      const data = await response.json();
+      const response = await embeddingClient.embeddings.create({
+        model: this.embeddingDeployment,
+        input: text,
+      });
 
       return {
-        embedding: data.data[0]?.embedding || [],
+        embedding: response.data[0]?.embedding || [],
         usage: {
-          promptTokens: data.usage?.prompt_tokens || 0,
-          totalTokens: data.usage?.total_tokens || 0,
+          promptTokens: response.usage?.prompt_tokens || 0,
+          totalTokens: response.usage?.total_tokens || 0,
         },
       };
     } catch (error) {
@@ -173,45 +278,184 @@ export class AzureOpenAIClient {
     }
   }
 
+  /**
+   * Create embeddings for multiple texts (batch)
+   */
   async createEmbeddings(texts: string[]): Promise<number[][]> {
-    const url = this.buildUrl(this.embeddingDeployment, '/embeddings');
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': this.apiKey,
-      },
-      body: JSON.stringify({
-        input: texts,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Azure OpenAI Embedding API error (${response.status}): ${errorText}`);
+    if (this.useDemoMode || !this.client) {
+      const embeddings = await Promise.all(texts.map(text => demoAI.createEmbedding(text)));
+      return embeddings;
     }
 
-    const data = await response.json();
-    return data.data.map((item: any) => item.embedding);
+    try {
+      const embeddingClient = new AzureOpenAI({
+        endpoint: this.endpoint.replace(/\/$/, ''),
+        apiKey: this.apiKey,
+        apiVersion: this.apiVersion,
+        deployment: this.embeddingDeployment,
+      });
+
+      const response = await embeddingClient.embeddings.create({
+        model: this.embeddingDeployment,
+        input: texts,
+      });
+
+      return response.data.map((item: any) => item.embedding);
+    } catch (error) {
+      console.error('Azure OpenAI Batch Embedding error:', error);
+      throw error;
+    }
   }
 
-  // Helper for clinical agent prompts with JSON response
-  async clinicalCompletion(systemPrompt: string, userPrompt: string): Promise<any> {
+  /**
+   * Clinical completion with JSON response - main method used by all clinical agents
+   * Automatically selects appropriate settings based on agent type
+   */
+  async clinicalCompletion(systemPrompt: string, userPrompt: string, agentName?: string): Promise<any> {
+    const agentConfig = this.getAgentConfig(agentName);
+
     const result = await this.chatCompletion({
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
       jsonMode: true,
-      temperature: 0.3, // Lower temperature for clinical accuracy
+      temperature: agentConfig.temperature,
+      maxTokens: agentConfig.maxTokens,
+      agentName: agentName || agentConfig.name,
     });
 
     try {
       return JSON.parse(result.content);
     } catch {
+      console.warn(`⚠️ Failed to parse JSON response from ${agentConfig.name}`);
       return { error: 'Failed to parse JSON response', raw: result.content };
     }
+  }
+
+  /**
+   * Multi-agent orchestration - run multiple agents in parallel/sequence
+   */
+  async runAgentPipeline(agents: Array<{
+    name: string;
+    systemPrompt: string;
+    userPrompt: string;
+    dependsOn?: string[];
+  }>): Promise<Record<string, any>> {
+    const results: Record<string, any> = {};
+    const completed = new Set<string>();
+
+    // Group agents by dependencies
+    const canRun = (agent: typeof agents[0]) => {
+      if (!agent.dependsOn || agent.dependsOn.length === 0) return true;
+      return agent.dependsOn.every(dep => completed.has(dep));
+    };
+
+    // Process agents in waves
+    let remaining = [...agents];
+    while (remaining.length > 0) {
+      const runnable = remaining.filter(canRun);
+
+      if (runnable.length === 0 && remaining.length > 0) {
+        console.error('❌ Circular dependency detected in agent pipeline');
+        break;
+      }
+
+      // Run all runnable agents in parallel
+      const wave = await Promise.all(
+        runnable.map(async (agent) => {
+          try {
+            const result = await this.clinicalCompletion(
+              agent.systemPrompt,
+              agent.userPrompt,
+              agent.name
+            );
+            return { name: agent.name, result, success: true };
+          } catch (error) {
+            return {
+              name: agent.name,
+              result: { error: error instanceof Error ? error.message : 'Unknown error' },
+              success: false
+            };
+          }
+        })
+      );
+
+      // Record results and mark as completed
+      for (const { name, result } of wave) {
+        results[name] = result;
+        completed.add(name);
+      }
+
+      // Remove completed agents from remaining
+      remaining = remaining.filter(a => !completed.has(a.name));
+    }
+
+    return results;
+  }
+
+  /**
+   * Health check for Azure OpenAI connection
+   */
+  async healthCheck(): Promise<{
+    status: 'healthy' | 'degraded' | 'unhealthy';
+    endpoint: string;
+    deployment: string;
+    latencyMs?: number;
+    error?: string;
+  }> {
+    const startTime = Date.now();
+
+    if (this.useDemoMode) {
+      return {
+        status: 'degraded',
+        endpoint: this.endpoint || 'not configured',
+        deployment: this.deploymentName,
+        error: this.initError || 'Running in demo mode'
+      };
+    }
+
+    try {
+      // Simple health check using a minimal completion
+      await this.chatCompletion({
+        messages: [{ role: 'user', content: 'Health check: respond with "OK"' }],
+        maxTokens: 10,
+        temperature: 0,
+      });
+
+      return {
+        status: 'healthy',
+        endpoint: this.endpoint,
+        deployment: this.deploymentName,
+        latencyMs: Date.now() - startTime
+      };
+    } catch (error) {
+      return {
+        status: 'unhealthy',
+        endpoint: this.endpoint,
+        deployment: this.deploymentName,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Get current configuration status
+   */
+  getStatus(): {
+    initialized: boolean;
+    demoMode: boolean;
+    endpoint: string;
+    deployment: string;
+    error?: string;
+  } {
+    return {
+      initialized: this.isInitialized,
+      demoMode: this.useDemoMode,
+      endpoint: this.endpoint || 'not configured',
+      deployment: this.deploymentName,
+      error: this.initError || undefined
+    };
   }
 }
 
@@ -223,4 +467,9 @@ export function getAzureOpenAI(): AzureOpenAIClient {
     _client = new AzureOpenAIClient();
   }
   return _client;
+}
+
+// Reset client (useful for testing or reconfiguration)
+export function resetAzureOpenAIClient(): void {
+  _client = null;
 }

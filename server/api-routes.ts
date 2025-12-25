@@ -395,6 +395,99 @@ function registerCaseEndpoints(app: Express) {
             res.status(500).json({ success: false, error: (error as Error).message });
         }
     });
+
+    // ==========================================
+    // Enhanced Clinical Analysis (5-Agent Pipeline)
+    // ==========================================
+    app.post("/api/cases/:id/clinical-analyze", async (req: Request, res: Response) => {
+        try {
+            const hospitalId = getHospitalId(req);
+            const userId = getUserId(req);
+            const entraOid = getEntraOid(req);
+            const caseId = req.params.id;
+            const { vitals, labValues } = req.body;
+
+            console.log(`[API] Clinical Analysis requested for case ${caseId.substring(0, 8)}...`);
+
+            // Get case data
+            const caseData = await HospitalCaseService.getCase(hospitalId, caseId);
+            if (!caseData) {
+                return res.status(404).json({ success: false, error: "Case not found" });
+            }
+
+            // Get patient data
+            const patientData = await HospitalPatientService.getPatient(hospitalId, caseData.patientId);
+            if (!patientData) {
+                return res.status(404).json({ success: false, error: "Patient not found" });
+            }
+
+            // Update case status
+            await HospitalCaseService.updateCase(hospitalId, caseId, { status: 'analyzing' });
+
+            // Audit log
+            await HospitalAuditService.createAuditLog(hospitalId, userId, entraOid, {
+                eventType: "case-analyzed",
+                resourceType: "case",
+                resourceId: caseId,
+                action: "clinical-analyze",
+                details: { pipeline: '5-agent-clinical', hasVitals: !!vitals, hasLabValues: !!labValues },
+                ipAddress: req.ip,
+                userAgent: req.headers["user-agent"],
+            });
+
+            // Import and run clinical agents
+            const { analyzeCaseWithClinicalAgents } = await import("./clinical-agents");
+
+            // Transform patient data to expected format
+            const patient = {
+                id: patientData.id,
+                demographics: {
+                    firstName: patientData.firstName || patientData.demographics?.firstName || '',
+                    lastName: patientData.lastName || patientData.demographics?.lastName || '',
+                    dateOfBirth: patientData.dateOfBirth || patientData.demographics?.dateOfBirth || '',
+                    gender: patientData.gender || patientData.demographics?.gender || 'unknown',
+                    mrn: patientData.mrn || patientData.demographics?.mrn || '',
+                },
+                diagnoses: patientData.diagnoses || [],
+                medications: patientData.medications || [],
+                allergies: patientData.allergies || [],
+                medicalHistory: '',
+            };
+
+            // Transform case data
+            const clinicalCase = {
+                id: caseData.id,
+                patientId: caseData.patientId,
+                caseType: caseData.caseType,
+                clinicalQuestion: caseData.description || '',
+                status: caseData.status,
+                createdAt: caseData.createdAt,
+            };
+
+            const result = await analyzeCaseWithClinicalAgents(patient as any, clinicalCase as any, vitals, labValues);
+
+            // Update case with results
+            await HospitalCaseService.updateCase(hospitalId, caseId, {
+                status: 'review-ready',
+                summary: result.synthesis?.caseSummary,
+            });
+
+            console.log(`✅ [API] Clinical Analysis complete for case ${caseId.substring(0, 8)}`);
+
+            res.json({
+                success: true,
+                data: {
+                    agentOutputs: result.agentOutputs,
+                    recommendations: result.recommendations,
+                    riskAlerts: result.riskAlerts,
+                    synthesis: result.synthesis,
+                },
+            });
+        } catch (error) {
+            console.error("[API] Clinical analyze error:", error);
+            res.status(500).json({ success: false, error: (error as Error).message });
+        }
+    });
 }
 
 // ============================================================================
