@@ -45,31 +45,50 @@ jobs:
 
     - name: 📦 Prepare deployment package
       run: |
-        # Create a clean deployment directory
-        mkdir -p deployment
+        # Create web.config for Azure to serve the Node app
+        cat > web.config << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <system.webServer>
+            <handlers>
+              <add name="iisnode" path="server/index.js" verb="*" modules="iisnode"/>
+            </handlers>
+            <rewrite>
+              <rules>
+                <rule name="NodeInspector" patternSyntax="ECMAScript" stopProcessing="true">
+                  <match url="^server/index.js\/debug[\/]?" />
+                </rule>
+                <rule name="StaticContent">
+                  <action type="Rewrite" url="dist{REQUEST_URI}"/>
+                </rule>
+                <rule name="DynamicContent">
+                  <conditions>
+                    <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
+                  </conditions>
+                  <action type="Rewrite" url="server/index.js"/>
+                </rule>
+              </rules>
+            </rewrite>
+            <security>
+              <requestFiltering>
+                <hiddenSegments>
+                  <remove segment="bin"/>
+                </hiddenSegments>
+              </requestFiltering>
+            </security>
+            <httpErrors existingResponse="PassThrough" />
+          </system.webServer>
+        </configuration>
+        EOF
         
-        # Copy built application
-        cp -r dist deployment/
+        # Create .deployment file to skip build
+        cat > .deployment << 'EOF'
+        [config]
+        SCM_DO_BUILD_DURING_DEPLOYMENT = false
+        EOF
         
-        # Copy production node_modules
-        cp -r node_modules deployment/
-        
-        # Copy package files
-        cp package.json deployment/
-        cp package-lock.json deployment/
-        
-        # Copy server files
-        cp -r server deployment/
-        cp -r shared deployment/
-        
-        # Create .deployment file to tell Azure not to build
-        echo "[config]" > deployment/.deployment
-        echo "SCM_DO_BUILD_DURING_DEPLOYMENT=false" >> deployment/.deployment
-        
-        # Zip the deployment package
-        cd deployment
-        zip -r ../deploy.zip . -q
-        cd ..
+        # Zip everything needed
+        zip -r deploy.zip dist server shared node_modules package.json web.config .deployment -q
         echo "✅ Deployment package created: $(du -h deploy.zip | cut -f1)"
 
     - name: � Azure Login
