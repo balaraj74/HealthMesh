@@ -8,6 +8,7 @@
 import { AzureOpenAI } from 'openai';
 import { getAzureConfig } from './config';
 import { demoAI } from './demo-ai-client';
+import { getGeminiClient } from '../ai/gemini-client';
 
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -102,6 +103,7 @@ export class AzureOpenAIClient {
   private useDemoMode: boolean;
   private isInitialized: boolean = false;
   private initError: string | null = null;
+  private geminiEnabled: boolean = false;
 
   constructor() {
     const config = getAzureConfig();
@@ -111,6 +113,23 @@ export class AzureOpenAIClient {
     this.deploymentName = config.openai.deploymentName || 'gpt-4o';
     this.embeddingDeployment = config.openai.embeddingDeployment || 'text-embedding-ada-002';
     this.useDemoMode = process.env.USE_DEMO_MODE === 'true';
+
+    // Check if Gemini is available
+    const gemini = getGeminiClient();
+    this.geminiEnabled = gemini.isConfigured();
+
+    // Log AI configuration
+    console.log('╔════════════════════════════════════════════════════════════╗');
+    console.log('║ 🤖 AI Engine Configuration                                 ║');
+    console.log('╠════════════════════════════════════════════════════════════╣');
+    if (this.geminiEnabled) {
+      console.log('║ ✨ PRIMARY: Google Gemini (gemini-2.0-flash)               ║');
+    }
+    if (this.endpoint && this.apiKey) {
+      console.log('║ 🔵 FALLBACK: Azure OpenAI (gpt-4o)                         ║');
+    }
+    console.log('║ 🎭 FINAL: Demo Mode (Intelligent Mocks)                    ║');
+    console.log('╚════════════════════════════════════════════════════════════╝');
 
     if (this.useDemoMode) {
       console.log('🎭 Demo Mode: Using intelligent mock AI responses');
@@ -123,8 +142,13 @@ export class AzureOpenAIClient {
   private initializeClient(): void {
     try {
       if (!this.endpoint || !this.apiKey) {
-        console.warn('⚠️ Azure OpenAI credentials not configured. Using demo mode.');
-        this.useDemoMode = true;
+        console.warn('⚠️ Azure OpenAI credentials not configured.');
+        if (this.geminiEnabled) {
+          console.log('✨ Using Google Gemini as primary AI engine');
+        } else {
+          console.warn('⚠️ No AI provider available. Using demo mode.');
+          this.useDemoMode = true;
+        }
         this.initError = 'Missing Azure OpenAI endpoint or API key';
         return;
       }
@@ -149,7 +173,9 @@ export class AzureOpenAIClient {
     } catch (error) {
       console.error('❌ Failed to initialize Azure OpenAI client:', error);
       this.initError = error instanceof Error ? error.message : 'Unknown initialization error';
-      this.useDemoMode = true;
+      if (!this.geminiEnabled) {
+        this.useDemoMode = true;
+      }
     }
   }
 
@@ -170,15 +196,49 @@ export class AzureOpenAIClient {
 
   /**
    * Main chat completion method - used by all agents
+   * PRIORITY: Gemini > Azure OpenAI > Demo Mode
    */
   async chatCompletion(options: ChatCompletionOptions): Promise<ChatCompletionResult> {
-    // Use demo mode if enabled or if initialization failed
-    if (this.useDemoMode || !this.client) {
+    const gemini = getGeminiClient();
+    const agentConfig = this.getAgentConfig(options.agentName);
+
+    // Use demo mode if explicitly requested
+    if (this.useDemoMode) {
       console.log(`🎭 Using demo mode for ${options.agentName || 'clinical AI'}`);
       return demoAI.chatCompletion(options);
     }
 
-    const agentConfig = this.getAgentConfig(options.agentName);
+    // PRIORITY 1: Use Gemini as PRIMARY AI engine (more reliable)
+    if (this.geminiEnabled) {
+      try {
+        console.log(`✨ Using Gemini for ${agentConfig.name}`);
+        return await gemini.chatCompletion(options);
+      } catch (geminiError: any) {
+        console.error(`❌ Gemini error for ${agentConfig.name}:`, geminiError.message);
+        // Fall through to Azure OpenAI
+      }
+    }
+
+    // PRIORITY 2: Try Azure OpenAI if Gemini failed or unavailable
+    if (this.client) {
+      try {
+        return await this.azureChatCompletion(options, agentConfig);
+      } catch (azureError: any) {
+        console.error(`❌ Azure OpenAI error for ${agentConfig.name}:`, azureError.message);
+      }
+    }
+
+    // PRIORITY 3: Final fallback to demo mode
+    console.log(`🎭 Falling back to demo mode for ${agentConfig.name}`);
+    return demoAI.chatCompletion(options);
+  }
+
+  /**
+   * Azure OpenAI specific chat completion
+   */
+  private async azureChatCompletion(options: ChatCompletionOptions, agentConfig: AgentConfig): Promise<ChatCompletionResult> {
+    if (!this.client) throw new Error('Azure OpenAI client not initialized');
+
     const startTime = Date.now();
 
     try {
@@ -216,16 +276,17 @@ export class AzureOpenAIClient {
 
       // Check for specific error types
       if (error.status === 429) {
-        console.warn('⚠️ Rate limit exceeded. Falling back to demo mode.');
+        console.warn('⚠️ Rate limit exceeded.');
+      } if (error.status === 404) {
+        console.warn('⚠️ Azure OpenAI Model Not Found.');
       } else if (error.status === 401 || error.status === 403) {
         console.warn('⚠️ Authentication error. Check your API key.');
       } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
         console.warn('⚠️ Network error. Azure OpenAI endpoint unreachable.');
       }
 
-      // Fallback to demo mode
-      console.log(`🎭 Falling back to demo mode for ${agentConfig.name}`);
-      return demoAI.chatCompletion(options);
+      // Rethrow to let caller handle fallback
+      throw error;
     }
   }
 
@@ -233,6 +294,24 @@ export class AzureOpenAIClient {
    * Create embeddings for text
    */
   async createEmbedding(text: string): Promise<EmbeddingResult> {
+    const gemini = getGeminiClient();
+
+    // Try Gemini if Azure is not available or falling back
+    if (!this.client && this.geminiEnabled && !this.useDemoMode) {
+      try {
+        const embedding = await gemini.createEmbedding(text);
+        return {
+          embedding,
+          usage: {
+            promptTokens: Math.floor(text.length / 4),
+            totalTokens: Math.floor(text.length / 4)
+          }
+        };
+      } catch (error) {
+        console.warn('⚠️ Gemini embedding failed, falling back to demo');
+      }
+    }
+
     if (this.useDemoMode || !this.client) {
       const embedding = await demoAI.createEmbedding(text);
       return {
@@ -266,7 +345,25 @@ export class AzureOpenAIClient {
         },
       };
     } catch (error) {
-      console.warn('Azure OpenAI Embedding error, using demo mode:', error);
+      console.warn('Azure OpenAI Embedding error:', error);
+
+      const gemini = getGeminiClient();
+      if (this.geminiEnabled) {
+        try {
+          const embedding = await gemini.createEmbedding(text);
+          return {
+            embedding,
+            usage: {
+              promptTokens: Math.floor(text.length / 4),
+              totalTokens: Math.floor(text.length / 4)
+            }
+          };
+        } catch (geminiError) {
+          console.warn('Gemini embedding fallback failed:', geminiError);
+        }
+      }
+
+      console.warn('Using demo mode for embedding');
       const embedding = await demoAI.createEmbedding(text);
       return {
         embedding,

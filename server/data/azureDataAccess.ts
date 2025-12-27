@@ -16,7 +16,7 @@ export class AzureHospitalService {
         const pool = await getPool();
         const result = await pool.request()
             .input("tenantId", sql.NVarChar, tenantId)
-            .query("SELECT * FROM hospitals WHERE tenant_id = @tenantId");
+            .query("SELECT * FROM hospitals WHERE entra_tenant_id = @tenantId OR tenant_id = @tenantId");
         return result.recordset[0] || null;
     }
 
@@ -29,8 +29,8 @@ export class AzureHospitalService {
             .input("name", sql.NVarChar, data.name)
             .input("domain", sql.NVarChar, data.domain || null)
             .query(`
-                INSERT INTO hospitals (id, tenant_id, name, domain) 
-                VALUES (@id, @entraTenantId, @name, @domain)
+                INSERT INTO hospitals (id, entra_tenant_id, tenant_id, name, domain) 
+                VALUES (@id, @entraTenantId, @entraTenantId, @name, @domain)
             `);
         return { id, ...data };
     }
@@ -191,10 +191,8 @@ export class AzurePatientService {
     }
 
     private static mapPatient(row: any) {
-        return {
-            id: row.id,
-            hospitalId: row.hospital_id,
-            fhirPatientId: row.fhir_patient_id,
+        // Build demographics object with data from columns
+        const demographics = {
             firstName: row.first_name,
             lastName: row.last_name,
             dateOfBirth: row.date_of_birth,
@@ -202,7 +200,24 @@ export class AzurePatientService {
             mrn: row.mrn,
             contactPhone: row.contact_phone,
             contactEmail: row.contact_email,
-            demographics: row.demographics ? JSON.parse(row.demographics) : null,
+            // Merge with any stored demographics JSON
+            ...(row.demographics ? JSON.parse(row.demographics) : {})
+        };
+
+        return {
+            id: row.id,
+            hospitalId: row.hospital_id,
+            fhirPatientId: row.fhir_patient_id,
+            // Keep top-level fields for backward compatibility
+            firstName: row.first_name,
+            lastName: row.last_name,
+            dateOfBirth: row.date_of_birth,
+            gender: row.gender,
+            mrn: row.mrn,
+            contactPhone: row.contact_phone,
+            contactEmail: row.contact_email,
+            // Structured demographics for frontend
+            demographics,
             diagnoses: row.diagnoses ? JSON.parse(row.diagnoses) : [],
             medications: row.medications ? JSON.parse(row.medications) : [],
             allergies: row.allergies ? JSON.parse(row.allergies) : [],
@@ -254,7 +269,7 @@ export class AzureCaseService {
             .input("patientId", sql.NVarChar, data.patientId)
             .input("assignedDoctorId", sql.NVarChar, userId)
             .input("caseType", sql.NVarChar, data.caseType || "general")
-            .input("chiefComplaint", sql.NVarChar, data.description || data.chiefComplaint || null)
+            .input("chiefComplaint", sql.NVarChar, data.clinicalQuestion || data.description || data.chiefComplaint || null)
             .input("status", sql.NVarChar, data.status || "active")
             .input("priority", sql.NVarChar, data.priority || "medium")
             .query(`
@@ -267,19 +282,24 @@ export class AzureCaseService {
 
     static async updateCase(hospitalId: string, caseId: string, data: any) {
         const pool = await getPool();
+
+        // Serialize aiAnalysis to JSON string if provided
+        const aiAnalysisJson = data.aiAnalysis ? JSON.stringify(data.aiAnalysis) : null;
+
         await pool.request()
             .input("hospitalId", sql.NVarChar, hospitalId)
             .input("caseId", sql.NVarChar, caseId)
             .input("status", sql.NVarChar, data.status || null)
             .input("priority", sql.NVarChar, data.priority || null)
-            .input("diagnosis", sql.NVarChar, data.diagnosis || data.aiAnalysis || null)
+            .input("diagnosis", sql.NVarChar, data.summary || data.diagnosis || null)
             .input("treatmentPlan", sql.NVarChar, data.treatmentPlan || null)
+            .input("aiAnalysis", sql.NVarChar, aiAnalysisJson)
             .query(`
                 UPDATE clinical_cases SET 
                     status = COALESCE(@status, status),
                     priority = COALESCE(@priority, priority),
-                    diagnosis = COALESCE(@diagnosis, diagnosis),
-                    treatment_plan = COALESCE(@treatmentPlan, treatment_plan),
+                    summary = COALESCE(@diagnosis, summary),
+                    ai_analysis = COALESCE(@aiAnalysis, ai_analysis),
                     updated_at = GETUTCDATE()
                 WHERE id = @caseId AND hospital_id = @hospitalId
             `);
@@ -297,9 +317,54 @@ export class AzureCaseService {
             .input("hospitalId", sql.NVarChar, hospitalId)
             .query("SELECT COUNT(*) as count FROM clinical_cases WHERE hospital_id = @hospitalId");
 
+        // Count analyzing cases (active)
         const activeCases = await pool.request()
             .input("hospitalId", sql.NVarChar, hospitalId)
-            .query("SELECT COUNT(*) as count FROM clinical_cases WHERE hospital_id = @hospitalId AND status = 'active'");
+            .query("SELECT COUNT(*) as count FROM clinical_cases WHERE hospital_id = @hospitalId AND status IN ('analyzing', 'submitted', 'draft')");
+
+        // Pending reviews (review-ready status)
+        const pendingReviews = await pool.request()
+            .input("hospitalId", sql.NVarChar, hospitalId)
+            .query("SELECT COUNT(*) as count FROM clinical_cases WHERE hospital_id = @hospitalId AND status = 'review-ready'");
+
+        // Cases this week
+        const casesThisWeek = await pool.request()
+            .input("hospitalId", sql.NVarChar, hospitalId)
+            .query("SELECT COUNT(*) as count FROM clinical_cases WHERE hospital_id = @hospitalId AND created_at >= DATEADD(day, -7, GETUTCDATE())");
+
+        // Get all cases with AI analysis to calculate critical alerts and confidence
+        const casesWithAnalysis = await pool.request()
+            .input("hospitalId", sql.NVarChar, hospitalId)
+            .query("SELECT ai_analysis FROM clinical_cases WHERE hospital_id = @hospitalId AND ai_analysis IS NOT NULL");
+
+        // Calculate critical alerts and average confidence from AI analysis data
+        let criticalAlerts = 0;
+        let totalConfidence = 0;
+        let confidenceCount = 0;
+
+        casesWithAnalysis.recordset.forEach((row: any) => {
+            if (row.ai_analysis) {
+                try {
+                    const analysis = JSON.parse(row.ai_analysis);
+                    // Count critical alerts
+                    const riskAlerts = analysis.riskAlerts || [];
+                    criticalAlerts += riskAlerts.filter((a: any) => a?.severity === 'critical').length;
+
+                    // Calculate average confidence from agent outputs
+                    const agentOutputs = analysis.agentOutputs || [];
+                    agentOutputs.forEach((output: any) => {
+                        if (output?.confidence && typeof output.confidence === 'number') {
+                            totalConfidence += output.confidence;
+                            confidenceCount++;
+                        }
+                    });
+                } catch (e) {
+                    // Skip invalid JSON
+                }
+            }
+        });
+
+        const avgConfidenceScore = confidenceCount > 0 ? Math.round(totalConfidence / confidenceCount) : 85;
 
         const recentCases = await pool.request()
             .input("hospitalId", sql.NVarChar, hospitalId)
@@ -309,6 +374,10 @@ export class AzureCaseService {
             totalPatients: totalPatients.recordset[0]?.count || 0,
             totalCases: totalCases.recordset[0]?.count || 0,
             activeCases: activeCases.recordset[0]?.count || 0,
+            pendingReviews: pendingReviews.recordset[0]?.count || 0,
+            criticalAlerts,
+            casesThisWeek: casesThisWeek.recordset[0]?.count || 0,
+            avgConfidenceScore,
             recentCases: recentCases.recordset.map(this.mapCase)
         };
     }
@@ -320,10 +389,12 @@ export class AzureCaseService {
             patientId: row.patient_id,
             caseType: row.case_type,
             title: row.title,
-            description: row.description,
+            description: row.chief_complaint || row.description,  // Map chief_complaint to description
+            clinicalQuestion: row.chief_complaint,  // Also expose as clinicalQuestion
             status: row.status,
             priority: row.priority,
             aiAnalysis: row.ai_analysis ? JSON.parse(row.ai_analysis) : null,
+            summary: row.summary || row.diagnosis,  // Map summary from diagnosis if available
             createdByUserId: row.created_by_user_id,
             createdAt: row.created_at,
             updatedAt: row.updated_at
@@ -384,7 +455,35 @@ export class AzureAuditService {
                 WHERE hospital_id = @hospitalId 
                 ORDER BY created_at DESC
             `);
-        return result.recordset;
+
+        // Map SQL column names to frontend expected names
+        return result.recordset.map((row: any) => {
+            // Handle timestamp conversion - SQL Server returns Date object or string
+            let timestamp: string;
+            if (row.created_at instanceof Date) {
+                timestamp = row.created_at.toISOString();
+            } else if (row.created_at) {
+                const parsed = new Date(row.created_at);
+                timestamp = isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+            } else {
+                timestamp = new Date().toISOString();
+            }
+
+            return {
+                id: row.id,
+                hospitalId: row.hospital_id,
+                userId: row.user_id || 'System',
+                entraOid: row.entra_oid,
+                eventType: row.event_type,
+                entityType: row.resource_type || row.event_type?.split('-')[0] || 'system',
+                entityId: row.resource_id || row.id,
+                action: row.action || row.event_type,
+                details: row.details ? (typeof row.details === 'string' ? JSON.parse(row.details) : row.details) : null,
+                ipAddress: row.ip_address,
+                userAgent: row.user_agent,
+                timestamp,
+            };
+        });
     }
 }
 
@@ -457,10 +556,10 @@ export class AzureChatService {
             .input("userId", sql.NVarChar, userId)
             .input("role", sql.NVarChar, data.role || "user")
             .input("content", sql.NVarChar, data.content)
-            .input("context", sql.NVarChar, data.context || data.metadata ? JSON.stringify(data.context || data.metadata) : null)
+            .input("metadata", sql.NVarChar, data.context || data.metadata ? JSON.stringify(data.context || data.metadata) : null)
             .query(`
-                INSERT INTO chat_messages (id, hospital_id, case_id, user_id, role, content, context)
-                VALUES (@id, @hospitalId, @caseId, @userId, @role, @content, @context)
+                INSERT INTO chat_messages (id, hospital_id, case_id, user_id, role, content, metadata)
+                VALUES (@id, @hospitalId, @caseId, @userId, @role, @content, @metadata)
             `);
 
         return { id };

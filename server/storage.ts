@@ -691,3 +691,29 @@ export class MemStorage implements IStorage {
 }
 
 export const storage = new MemStorage();
+
+// Export SQL connection pool for QR services
+import sql from 'mssql';
+import { getAzureConfig } from './azure/config';
+
+let poolInstance: sql.ConnectionPool | null = null;
+
+export async function getConnectionPool(): Promise<sql.ConnectionPool> {
+    if (!poolInstance) {
+        const azureConfig = getAzureConfig();
+        const config = {
+            user: azureConfig.sql.user,
+            password: azureConfig.sql.password,
+            database: azureConfig.sql.database,
+            server: azureConfig.sql.server,
+            pool: {
+                max: 10,
+                min: 0,
+                idleTimeoutMillis: 30000
+            },
+            options: azureConfig.sql.options
+        };
+        poolInstance = await sql.connect(config);
+    }
+    return poolInstance;
+}

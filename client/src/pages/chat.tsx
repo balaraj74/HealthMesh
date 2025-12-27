@@ -127,16 +127,26 @@ export default function Chat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const { data: casesResponse, error: casesError } = useQuery<any>({
+  const { data: cases = [], isLoading: casesLoading, error: casesError } = useQuery<ClinicalCase[]>({
     queryKey: ["/api/cases"],
+    queryFn: async (): Promise<ClinicalCase[]> => {
+      const response = await fetch("/api/cases", { credentials: "include" });
+      const data: { success: boolean; data: ClinicalCase[] } = await response.json();
+      return Array.isArray(data.data) ? data.data : [];
+    },
+    refetchInterval: 15000, // Refresh every 15 seconds
   });
-  const cases = Array.isArray(casesResponse?.data) ? casesResponse.data : [];
 
-  const { data: messagesResponse, isLoading: messagesLoading, error: messagesError } = useQuery<any>({
+  const { data: messages = [], isLoading: messagesLoading, error: messagesError } = useQuery<ChatMessage[]>({
     queryKey: ["/api/chat", selectedCaseId],
+    queryFn: async (): Promise<ChatMessage[]> => {
+      const response = await fetch(`/api/chat/${selectedCaseId}`, { credentials: "include" });
+      const data: { success: boolean; data: ChatMessage[] } = await response.json();
+      return Array.isArray(data.data) ? data.data : [];
+    },
     enabled: !!selectedCaseId,
+    refetchInterval: 5000, // Refresh chat every 5 seconds for real-time
   });
-  const messages = Array.isArray(messagesResponse?.data) ? messagesResponse.data : [];
 
   const sendMutation = useMutation({
     mutationFn: async (content: string) => {
@@ -185,9 +195,10 @@ export default function Chat() {
     });
   };
 
-  const activeCases = cases?.filter((c: any) =>
-    c.status === "active" || c.status === "analyzing" || c.status === "review-ready" || c.status === "submitted"
-  ) ?? [];
+  const casesList = Array.isArray(cases) ? cases : [];
+  const activeCases = casesList.filter((c: any) =>
+    c.status === "analyzing" || c.status === "review-ready" || c.status === "submitted" || c.status === "draft"
+  );
 
   return (
     <div className="p-6 h-full flex flex-col">

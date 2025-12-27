@@ -126,7 +126,7 @@ function LogDetailDialog({ log }: { log: AuditLog }) {
               <p className="font-mono text-sm">{log.ipAddress || "N/A"}</p>
             </div>
           </div>
-          
+
           {log.details && (
             <div>
               <p className="text-sm text-muted-foreground mb-2">Details</p>
@@ -148,15 +148,37 @@ export default function AuditLogs() {
   const [actionFilter, setActionFilter] = useState<string>("all");
   const [entityFilter, setEntityFilter] = useState<string>("all");
 
-  const { data: logs, isLoading } = useQuery<{ success: boolean; data: AuditLog[] }>({
-    queryKey: ["/api/audit"],
-    select: (response) => response.data,
+  // Extended AuditLog type for what backend returns
+  interface BackendAuditLog {
+    id: string;
+    hospitalId: string;
+    userId: string;
+    entraOid?: string;
+    eventType: string;
+    entityType: string;
+    entityId: string;
+    action: string;
+    details?: any;
+    ipAddress?: string;
+    userAgent?: string;
+    timestamp: string;
+  }
+
+  const { data: logs = [], isLoading } = useQuery<BackendAuditLog[]>({
+    queryKey: ["/api/audit-logs"],
+    queryFn: async (): Promise<BackendAuditLog[]> => {
+      const response = await fetch("/api/audit-logs", { credentials: "include" });
+      const data: { success: boolean; data: BackendAuditLog[] } = await response.json();
+      return Array.isArray(data.data) ? data.data : [];
+    },
+    refetchInterval: 15000, // Refresh every 15 seconds for real-time
   });
 
-  const filteredLogs = logs?.filter((log) => {
-    const matchesSearch = 
-      log.entityId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (log.userId?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+  const logsList = Array.isArray(logs) ? logs : [];
+  const filteredLogs = logsList.filter((log) => {
+    const matchesSearch = !searchQuery ||
+      (log.entityId?.toLowerCase()?.includes(searchQuery.toLowerCase()) ?? false) ||
+      (log.userId?.toLowerCase()?.includes(searchQuery.toLowerCase()) ?? false);
     const matchesAction = actionFilter === "all" || log.action === actionFilter;
     const matchesEntity = entityFilter === "all" || log.entityType === entityFilter;
     return matchesSearch && matchesAction && matchesEntity;
@@ -175,7 +197,7 @@ export default function AuditLogs() {
         log.ipAddress || "N/A"
       ].join(","))
     ].join("\n");
-    
+
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -341,9 +363,9 @@ export default function AuditLogs() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="text-sm capitalize">{log.entityType}</p>
+                          <p className="text-sm capitalize">{log.entityType || 'N/A'}</p>
                           <p className="text-xs text-muted-foreground font-mono">
-                            {log.entityId.slice(0, 12)}...
+                            {log.entityId ? `${log.entityId.slice(0, 12)}...` : 'N/A'}
                           </p>
                         </div>
                       </TableCell>
@@ -351,7 +373,7 @@ export default function AuditLogs() {
                         {log.userId || "System"}
                       </TableCell>
                       <TableCell>
-                        <LogDetailDialog log={log} />
+                        <LogDetailDialog log={log as any} />
                       </TableCell>
                     </TableRow>
                   );

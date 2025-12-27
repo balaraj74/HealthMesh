@@ -488,7 +488,7 @@ PATIENT DEMOGRAPHICS:
 - MRN: ${context.patient.demographics.mrn}
 
 ACTIVE DIAGNOSES:
-${context.patient.diagnoses.filter(d => d.status === 'active').map(d => `- ${d.display} (${d.codeSystem}: ${d.code})`).join('\n') || '- None documented'}
+${context.patient.diagnoses.filter(d => d.status === 'active').map(d => `- ${d.display} (ICD-10: ${d.code})`).join('\n') || '- None documented'}
 
 CURRENT MEDICATIONS:
 ${context.patient.medications.filter(m => m.status === 'active').map(m => `- ${m.name} ${m.dosage} ${m.frequency}`).join('\n') || '- None documented'}
@@ -529,7 +529,7 @@ Provide your triage assessment in JSON format:
   "confidence": <0-100>
 }`;
 
-        const result = await openai.clinicalCompletion(SYSTEM_PROMPTS.triage, userPrompt) as TriageOutput;
+        const result = await openai.clinicalCompletion(SYSTEM_PROMPTS.triage, userPrompt, 'triage') as TriageOutput;
         const endTime = new Date();
 
         await monitor.trackAgentExecution({
@@ -547,14 +547,14 @@ Provide your triage assessment in JSON format:
             status: "completed",
             startedAt: startTime.toISOString(),
             completedAt: endTime.toISOString(),
-            summary: `Risk: ${result.riskCategory} | Urgency: ${result.urgencyScore}/10${result.news2Score !== undefined ? ` | NEWS2: ${result.news2Score}` : ''}${result.redFlags.length > 0 ? ` | Red Flags: ${result.redFlags.length}` : ''}`,
+            summary: `Risk: ${result.riskCategory} | Urgency: ${result.urgencyScore}/10${result.news2Score !== undefined ? ` | NEWS2: ${result.news2Score}` : ''}${result.redFlags?.length > 0 ? ` | Red Flags: ${result.redFlags.length}` : ''}`,
             details: {
                 agentName: "Triage Agent",
                 ...result,
             },
             confidence: result.confidence || 85,
             evidenceSources: ["Patient vitals", "Lab values", "NEWS2 scoring", "SOFA-lite scoring"],
-            reasoningChain: result.rationale,
+            reasoningChain: result.rationale || [],
         };
     } catch (error) {
         const endTime = new Date();
@@ -636,7 +636,7 @@ Generate differential diagnoses in JSON format:
   "confidence": <0-100 overall confidence>
 }`;
 
-        const result = await openai.clinicalCompletion(SYSTEM_PROMPTS.diagnostic, userPrompt) as DiagnosticOutput;
+        const result = await openai.clinicalCompletion(SYSTEM_PROMPTS.diagnostic, userPrompt, 'diagnostic') as DiagnosticOutput;
         const endTime = new Date();
 
         await monitor.trackAgentExecution({
@@ -759,7 +759,7 @@ Map to guidelines and provide in JSON format:
   "confidence": <0-100>
 }`;
 
-        const result = await openai.clinicalCompletion(SYSTEM_PROMPTS.guideline, userPrompt) as GuidelineOutput;
+        const result = await openai.clinicalCompletion(SYSTEM_PROMPTS.guideline, userPrompt, 'guideline') as GuidelineOutput;
         const endTime = new Date();
 
         await monitor.trackAgentExecution({
@@ -886,7 +886,7 @@ Provide medication safety analysis in JSON format:
   "confidence": <0-100>
 }`;
 
-        const result = await openai.clinicalCompletion(SYSTEM_PROMPTS.medicationSafety, userPrompt) as MedicationSafetyOutput;
+        const result = await openai.clinicalCompletion(SYSTEM_PROMPTS.medicationSafety, userPrompt, 'medication-safety') as MedicationSafetyOutput;
         const endTime = new Date();
 
         // Generate RiskAlerts from safety findings
@@ -1067,7 +1067,7 @@ Provide evidence summary in JSON format:
 
 IMPORTANT: Only cite studies you are confident exist. Do not fabricate study names, authors, or findings.`;
 
-        const result = await openai.clinicalCompletion(SYSTEM_PROMPTS.evidence, userPrompt) as EvidenceOutput;
+        const result = await openai.clinicalCompletion(SYSTEM_PROMPTS.evidence, userPrompt, 'evidence') as EvidenceOutput;
         const endTime = new Date();
 
         await monitor.trackAgentExecution({
@@ -1199,7 +1199,7 @@ Generate the final synthesis in JSON format:
   "clinicalDisclaimer": "This is clinical decision support only. All recommendations must be reviewed and validated by a licensed clinician. The final clinical decision rests with the treating physician."
 }`;
 
-        const result = await openai.clinicalCompletion(SYSTEM_PROMPTS.synthesisOrchestrator, userPrompt) as FinalSynthesis;
+        const result = await openai.clinicalCompletion(SYSTEM_PROMPTS.synthesisOrchestrator, userPrompt, 'synthesis') as FinalSynthesis;
         const endTime = new Date();
 
         // Generate recommendations from synthesis

@@ -26,6 +26,7 @@ import RiskSafety from "@/pages/risk-safety";
 import Chat from "@/pages/chat";
 import AuditLogs from "@/pages/audit";
 import Settings from "@/pages/settings";
+import QRScan from "@/pages/qr-scan";
 
 function Router() {
   return (
@@ -88,6 +89,11 @@ function Router() {
       <Route path="/chat">
         <ProtectedRoute>
           <Chat />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/qr-scan">
+        <ProtectedRoute>
+          <QRScan />
         </ProtectedRoute>
       </Route>
       <Route path="/audit">

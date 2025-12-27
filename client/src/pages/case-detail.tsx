@@ -374,6 +374,11 @@ export default function CaseDetail() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [clinicalSynthesis, setClinicalSynthesis] = useState<any>(null);
+  const [analysisResults, setAnalysisResults] = useState<{
+    agentOutputs: AgentOutput[];
+    recommendations: Recommendation[];
+    riskAlerts: RiskAlert[];
+  } | null>(null);
 
   const { data: caseData, isLoading: caseLoading, isError, error } = useQuery<{ success: boolean; data: ClinicalCase }, Error, ClinicalCase>({
     queryKey: ["/api/cases", id],
@@ -412,9 +417,19 @@ export default function CaseDetail() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/cases", id] });
-      if (data.data?.synthesis) {
-        setClinicalSynthesis(data.data.synthesis);
+
+      // Store all analysis results in local state so they display immediately
+      if (data.data) {
+        if (data.data.synthesis) {
+          setClinicalSynthesis(data.data.synthesis);
+        }
+        setAnalysisResults({
+          agentOutputs: data.data.agentOutputs || [],
+          recommendations: data.data.recommendations || [],
+          riskAlerts: data.data.riskAlerts || [],
+        });
       }
+
       toast({
         title: "Clinical Analysis Complete",
         description: "5-agent clinical intelligence pipeline has finished.",
@@ -497,13 +512,17 @@ export default function CaseDetail() {
     active: "bg-green-500",
   };
 
-  // Safe access to arrays
-  const recommendations = caseData.recommendations ?? [];
-  const riskAlerts = caseData.riskAlerts ?? [];
-  const agentOutputs = caseData.agentOutputs ?? [];
+  // Use local state analysis results if available, otherwise fall back to saved aiAnalysis from case data
+  const savedAnalysis = caseData.aiAnalysis as any;
+  const recommendations = analysisResults?.recommendations ?? savedAnalysis?.recommendations ?? [];
+  const riskAlerts = analysisResults?.riskAlerts ?? savedAnalysis?.riskAlerts ?? [];
+  const agentOutputs = analysisResults?.agentOutputs ?? savedAnalysis?.agentOutputs ?? [];
 
-  const criticalAlerts = riskAlerts.filter(a => a.severity === "critical");
-  const warningAlerts = riskAlerts.filter(a => a.severity === "warning");
+  // Load synthesis from local state or saved data
+  const displaySynthesis = clinicalSynthesis ?? savedAnalysis?.synthesis ?? null;
+
+  const criticalAlerts = riskAlerts.filter((a: any) => a.severity === "critical");
+  const warningAlerts = riskAlerts.filter((a: any) => a.severity === "warning");
 
   return (
     <div className="p-6">
@@ -657,10 +676,10 @@ export default function CaseDetail() {
 
             <TabsContent value="synthesis" className="space-y-4">
               <ClinicalSynthesisDisplay
-                synthesis={clinicalSynthesis}
+                synthesis={displaySynthesis}
                 isLoading={clinicalAnalyzeMutation.isPending}
               />
-              {!clinicalSynthesis && !clinicalAnalyzeMutation.isPending && (
+              {!displaySynthesis && !clinicalAnalyzeMutation.isPending && (
                 <div className="flex justify-center py-8">
                   <Button
                     onClick={() => clinicalAnalyzeMutation.mutate()}

@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PatientQRDisplay } from "@/components/patient-qr-display";
 import { apiRequest } from "@/lib/queryClient";
 import type { Patient, ClinicalCase } from "@shared/schema";
 
@@ -102,6 +103,10 @@ export default function PatientDetail() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column: Patient Info */}
                 <div className="space-y-6">
+                    {/* QR Code Display */}
+                    <PatientQRDisplay patientId={id as string} />
+
+
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-base">Contact Information</CardTitle>

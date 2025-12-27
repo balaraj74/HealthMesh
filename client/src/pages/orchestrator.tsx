@@ -471,8 +471,8 @@ function PipelineVisualization({
                 {index < pipelineOrder.length - 1 && (
                   <div className="flex items-center mx-3">
                     <div className={`w-12 lg:w-20 h-1 rounded-full transition-all duration-500 ${isCompleted ? 'bg-gradient-to-r from-green-500 to-green-400' :
-                        isActive ? 'bg-gradient-to-r from-blue-500/60 to-blue-300/30 animate-pulse' :
-                          'bg-gradient-to-r from-primary/30 to-primary/10'
+                      isActive ? 'bg-gradient-to-r from-blue-500/60 to-blue-300/30 animate-pulse' :
+                        'bg-gradient-to-r from-primary/30 to-primary/10'
                       }`} />
                     <ArrowRight className={`h-4 w-4 -ml-1 transition-colors duration-300 ${isCompleted ? 'text-green-500' : isActive ? 'text-blue-500' : 'text-primary/40'
                       }`} />
@@ -502,7 +502,7 @@ function ActiveCasesPanel({
   isAnalyzing: boolean;
   analyzingCaseId?: string;
 }) {
-  const pendingCases = cases.filter(c => c.status === "submitted" || c.status === "draft" || c.status === "active");
+  const pendingCases = cases.filter(c => c.status === "submitted" || c.status === "draft");
   const analyzingCases = cases.filter(c => c.status === "analyzing");
   const readyCases = cases.filter(c => c.status === "review-ready");
 
@@ -612,9 +612,9 @@ export default function Orchestrator() {
   const { pipelineState, agentStatuses, runPipeline, resetPipeline } = useAgentPipeline();
   const [analyzingCaseId, setAnalyzingCaseId] = useState<string | null>(null);
 
-  const { data: cases, isLoading } = useQuery({
+  const { data: cases = [], isLoading } = useQuery<ClinicalCase[]>({
     queryKey: ["/api/cases"],
-    queryFn: async () => {
+    queryFn: async (): Promise<ClinicalCase[]> => {
       const response = await apiRequest("GET", "/api/cases");
       const data: { success: boolean; data: ClinicalCase[] } = await response.json();
       return data.data || [];
@@ -656,12 +656,13 @@ export default function Orchestrator() {
     analyzeMutation.mutate(caseId);
   };
 
-  const activeCases = cases?.filter(c => c.status === "analyzing") ?? [];
-  const completedToday = cases?.filter(c => {
+  const casesList = Array.isArray(cases) ? cases : [];
+  const activeCases = casesList.filter(c => c.status === "analyzing");
+  const completedToday = casesList.filter(c => {
     const today = new Date().toDateString();
     return c.status === "review-ready" && new Date(c.updatedAt).toDateString() === today;
-  }).length ?? 0;
-  const totalCases = cases?.length ?? 0;
+  }).length;
+  const totalCases = casesList.length;
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-[1600px] mx-auto">

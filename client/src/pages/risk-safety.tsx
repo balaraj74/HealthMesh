@@ -142,17 +142,43 @@ function RiskTypeSummary({ alerts }: { alerts: RiskAlert[] }) {
 }
 
 export default function RiskSafety() {
-  const { data: cases, isLoading: casesLoading } = useQuery<{ success: boolean; data: ClinicalCase[] }>({
+  const { data: cases = [], isLoading: casesLoading } = useQuery<ClinicalCase[]>({
     queryKey: ["/api/cases"],
-    select: (response) => response.data,
+    queryFn: async (): Promise<ClinicalCase[]> => {
+      const response = await fetch("/api/cases", { credentials: "include" });
+      const data: { success: boolean; data: ClinicalCase[] } = await response.json();
+      return Array.isArray(data.data) ? data.data : [];
+    },
+    refetchInterval: 15000, // Refresh every 15 seconds
   });
 
-  const allAlerts = cases?.flatMap(c => c.riskAlerts) ?? [];
-  const criticalAlerts = allAlerts.filter(a => a.severity === "critical");
-  const warningAlerts = allAlerts.filter(a => a.severity === "warning");
-  const infoAlerts = allAlerts.filter(a => a.severity === "info");
+  // Ensure cases is always an array before processing
+  const casesList = Array.isArray(cases) ? cases : [];
 
-  const safetyScore = allAlerts.length === 0 ? 100 : 
+  // Extract risk alerts from saved AI analysis or case-level data with null safety
+  const allAlerts: RiskAlert[] = casesList.flatMap((c: any) => {
+    // First try to get alerts from saved aiAnalysis
+    const savedAlerts = c?.aiAnalysis?.riskAlerts ?? [];
+    // Fall back to case-level riskAlerts if available
+    const caseAlerts = c?.riskAlerts ?? [];
+    // Merge and dedupe by id, filter out any undefined/null
+    const combined = [...savedAlerts, ...caseAlerts].filter((a): a is RiskAlert =>
+      a != null && typeof a === 'object' && 'severity' in a
+    );
+    // Dedupe by id
+    const seen = new Set<string>();
+    return combined.filter(alert => {
+      if (!alert.id || seen.has(alert.id)) return false;
+      seen.add(alert.id);
+      return true;
+    });
+  });
+
+  const criticalAlerts = allAlerts.filter(a => a?.severity === "critical");
+  const warningAlerts = allAlerts.filter(a => a?.severity === "warning");
+  const infoAlerts = allAlerts.filter(a => a?.severity === "info");
+
+  const safetyScore = allAlerts.length === 0 ? 100 :
     Math.max(0, 100 - (criticalAlerts.length * 20) - (warningAlerts.length * 5));
 
   return (
@@ -228,17 +254,15 @@ export default function RiskSafety() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">Overall Safety Score</span>
-              <span className={`text-sm font-bold ${
-                safetyScore >= 80 ? "text-green-500" :
+              <span className={`text-sm font-bold ${safetyScore >= 80 ? "text-green-500" :
                 safetyScore >= 50 ? "text-yellow-500" : "text-destructive"
-              }`}>{safetyScore}%</span>
+                }`}>{safetyScore}%</span>
             </div>
             <Progress
               value={safetyScore}
-              className={`h-3 ${
-                safetyScore >= 80 ? "[&>div]:bg-green-500" :
+              className={`h-3 ${safetyScore >= 80 ? "[&>div]:bg-green-500" :
                 safetyScore >= 50 ? "[&>div]:bg-yellow-500" : "[&>div]:bg-destructive"
-              }`}
+                }`}
             />
             <p className="text-xs text-muted-foreground mt-2">
               Based on severity and count of active safety alerts
@@ -268,8 +292,8 @@ export default function RiskSafety() {
               <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No Active Safety Alerts</h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                All cases are clear of safety concerns. The Risk & Safety Agent 
-                continuously monitors for drug interactions, contraindications, 
+                All cases are clear of safety concerns. The Risk & Safety Agent
+                continuously monitors for drug interactions, contraindications,
                 and other potential risks.
               </p>
             </CardContent>
@@ -296,9 +320,9 @@ export default function RiskSafety() {
             <div>
               <p className="text-sm font-medium">Risk & Safety Agent</p>
               <p className="text-xs text-muted-foreground">
-                This agent automatically screens for drug-drug interactions using 
-                clinical databases, checks contraindications based on patient history, 
-                verifies dosage limits, and flags age/pregnancy/comorbidity risks. 
+                This agent automatically screens for drug-drug interactions using
+                clinical databases, checks contraindications based on patient history,
+                verifies dosage limits, and flags age/pregnancy/comorbidity risks.
                 All alerts should be reviewed by qualified clinical staff.
               </p>
             </div>

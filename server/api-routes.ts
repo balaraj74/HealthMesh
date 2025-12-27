@@ -23,6 +23,8 @@ import {
     AzureChatService as HospitalChatService,
     AzureAuditService as HospitalAuditService,
 } from "./data/azureDataAccess";
+import { PatientQRService } from "./services/qr-identity.service";
+import { getConnectionPool } from "./storage";
 
 // ============================================================================
 // USER PROFILE ENDPOINT
@@ -170,20 +172,22 @@ function registerPatientEndpoints(app: Express) {
             );
 
             // Audit log
-            await HospitalAuditService.createAuditLog(hospitalId, userId, entraOid, {
-                eventType: "patient-created",
-                resourceType: "patient",
-                resourceId: patient.id,
-                action: "create",
-                details: {
-                    mrn: patient.mrn,
-                    name: `${patient.firstName} ${patient.lastName}`,
-                },
-                ipAddress: req.ip,
-                userAgent: req.headers["user-agent"],
-            });
+            if (patient) {
+                await HospitalAuditService.createAuditLog(hospitalId, userId, entraOid, {
+                    eventType: "patient-created",
+                    resourceType: "patient",
+                    resourceId: patient.id,
+                    action: "create",
+                    details: {
+                        mrn: patient.mrn,
+                        name: `${patient.firstName} ${patient.lastName}`,
+                    },
+                    ipAddress: req.ip,
+                    userAgent: req.headers["user-agent"],
+                });
 
-            console.log(`✅ [API] Patient created: ${patient.id}`);
+                console.log(`✅ [API] Patient created: ${patient.id}`);
+            }
             res.status(201).json({ success: true, data: patient });
         } catch (error) {
             console.error("[API] Create patient error:", error);
@@ -349,15 +353,17 @@ function registerCaseEndpoints(app: Express) {
 
             const newCase = await HospitalCaseService.createCase(hospitalId, userId, caseData);
 
-            await HospitalAuditService.createAuditLog(hospitalId, userId, entraOid, {
-                eventType: "case-created",
-                resourceType: "case",
-                resourceId: newCase.id,
-                action: "create",
-                details: { patientId: newCase.patientId, caseType: newCase.caseType },
-                ipAddress: req.ip,
-                userAgent: req.headers["user-agent"],
-            });
+            if (newCase) {
+                await HospitalAuditService.createAuditLog(hospitalId, userId, entraOid, {
+                    eventType: "case-created",
+                    resourceType: "case",
+                    resourceId: newCase.id,
+                    action: "create",
+                    details: { patientId: newCase.patientId, caseType: newCase.caseType },
+                    ipAddress: req.ip,
+                    userAgent: req.headers["user-agent"],
+                });
+            }
 
             res.status(201).json({ success: true, data: newCase });
         } catch (error) {
@@ -466,22 +472,27 @@ function registerCaseEndpoints(app: Express) {
 
             const result = await analyzeCaseWithClinicalAgents(patient as any, clinicalCase as any, vitals, labValues);
 
-            // Update case with results
+            // Save full analysis results to database
+            const analysisData = {
+                agentOutputs: result.agentOutputs,
+                recommendations: result.recommendations,
+                riskAlerts: result.riskAlerts,
+                synthesis: result.synthesis,
+                analyzedAt: new Date().toISOString(),
+            };
+
+            // Update case with results - store in aiAnalysis column
             await HospitalCaseService.updateCase(hospitalId, caseId, {
                 status: 'review-ready',
                 summary: result.synthesis?.caseSummary,
+                aiAnalysis: analysisData as any,
             });
 
-            console.log(`✅ [API] Clinical Analysis complete for case ${caseId.substring(0, 8)}`);
+            console.log(`✅ [API] Clinical Analysis complete and saved for case ${caseId.substring(0, 8)}`);
 
             res.json({
                 success: true,
-                data: {
-                    agentOutputs: result.agentOutputs,
-                    recommendations: result.recommendations,
-                    riskAlerts: result.riskAlerts,
-                    synthesis: result.synthesis,
-                },
+                data: analysisData,
             });
         } catch (error) {
             console.error("[API] Clinical analyze error:", error);
@@ -766,6 +777,488 @@ function registerAuditEndpoints(app: Express) {
 }
 
 // ============================================================================
+// PATIENT QR IDENTITY ENDPOINTS
+// FHIR R4 Compliant | HIPAA-Aligned | Secure Token-Based Access
+// ============================================================================
+
+function registerQRIdentityEndpoints(app: Express) {
+    /**
+     * POST /api/qr/generate
+     * Generate QR code for a patient
+     * SECURITY: Requires authentication, validates input
+     */
+    app.post("/api/qr/generate", async (req: Request, res: Response) => {
+        try {
+            const hospitalId = getHospitalId(req);
+            const userId = getUserId(req);
+            const { patientId, expiryDays } = req.body;
+
+            // Input validation
+            if (!patientId || typeof patientId !== 'string') {
+                return res.status(400).json({
+                    success: false,
+                    error: "Valid Patient ID is required"
+                });
+            }
+
+            // Sanitize patient ID - allow only alphanumeric, hyphens, underscores
+            const sanitizedPatientId = patientId.trim();
+            if (!/^[a-zA-Z0-9\-_]+$/.test(sanitizedPatientId) || sanitizedPatientId.length > 100) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Invalid Patient ID format"
+                });
+            }
+
+            // Validate expiry days if provided
+            if (expiryDays !== undefined && expiryDays !== null) {
+                const days = parseInt(expiryDays, 10);
+                if (isNaN(days) || days < 1 || days > 365) {
+                    return res.status(400).json({
+                        success: false,
+                        error: "Expiry days must be between 1 and 365"
+                    });
+                }
+            }
+
+            // Get Azure SQL connection pool
+            const pool = await getConnectionPool();
+
+            // Use Azure SQL-based QR service
+            const qrData = await PatientQRService.generatePatientQR(pool, {
+                patientId: sanitizedPatientId,
+                hospitalId: hospitalId,
+                createdByUserId: userId,
+                expiryDays: expiryDays || null
+            });
+
+            // Log QR generation
+            await HospitalAuditService.createAuditLog(
+                hospitalId,
+                userId,
+                getEntraOid(req),
+                {
+                    eventType: 'qr_generated',
+                    resourceType: 'patient',
+                    resourceId: patientId.toString(),
+                    action: 'create',
+                    details: {
+                        fhirPatientId: qrData.fhirPatientId,
+                        mpi: qrData.mpi
+                    }
+                }
+            );
+
+            res.json({
+                success: true,
+                data: {
+                    qrCodeId: qrData.qrCodeId,
+                    fhirPatientId: qrData.fhirPatientId,
+                    masterPatientIdentifier: qrData.mpi,
+                    qrImageDataUrl: qrData.qrImageDataUrl,
+                    message: "QR code generated successfully"
+                }
+            });
+        } catch (error: any) {
+            console.error("[API] Generate QR error:", error.message);
+            // SECURITY: Don't expose internal error details
+            const isValidationError = error.message?.includes('Invalid parameter');
+            res.status(isValidationError ? 400 : 500).json({
+                success: false,
+                error: isValidationError ? error.message : "Failed to generate QR code"
+            });
+        }
+    });
+
+    /**
+     * POST /api/qr/scan
+     * Validate QR token and return patient data for redirect
+     * SECURITY: RBAC enforced | Full audit trail | Rate limited
+     */
+    app.post("/api/qr/scan", async (req: Request, res: Response) => {
+        try {
+            const hospitalId = getHospitalId(req);
+            const userId = getUserId(req);
+            const entraOid = getEntraOid(req);
+            const { qrToken, accessPurpose } = req.body;
+
+            // Input validation
+            if (!qrToken || typeof qrToken !== 'string') {
+                return res.status(400).json({
+                    success: false,
+                    error: "QR token is required",
+                    code: 'INVALID_INPUT'
+                });
+            }
+
+            // Prevent excessively long tokens (DoS protection)
+            if (qrToken.length > 2000) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Invalid token",
+                    code: 'INVALID_INPUT'
+                });
+            }
+
+            // Sanitize access purpose
+            const sanitizedPurpose = (accessPurpose || 'clinical_care').slice(0, 100);
+
+            // Get Azure SQL connection pool
+            const pool = await getConnectionPool();
+
+            // Step 1: Validate QR token
+            const validation = await PatientQRService.validateQRToken(pool, qrToken);
+
+            if (!validation.valid) {
+                // Log failed access attempt
+                await HospitalAuditService.createAuditLog(
+                    hospitalId,
+                    userId,
+                    entraOid,
+                    {
+                        eventType: 'qr_scan_failed',
+                        resourceType: 'patient',
+                        resourceId: 'unknown',
+                        action: 'read',
+                        details: {
+                            reason: validation.error,
+                            ipAddress: req.ip,
+                            userAgent: req.headers['user-agent']
+                        }
+                    }
+                );
+
+                return res.status(403).json({
+                    success: false,
+                    error: validation.error,
+                    code: 'QR_VALIDATION_FAILED'
+                });
+            }
+
+            const { patientId, hospitalId: qrHospitalId, fhirPatientId } = validation;
+
+            // Step 2: RBAC - Check if user has access to this patient's hospital
+            const user = req.user;
+            const hasAccess = hospitalId === qrHospitalId || user?.role === 'admin';
+
+            if (!hasAccess) {
+                // Log unauthorized access attempt
+                await HospitalAuditService.createAuditLog(
+                    hospitalId,
+                    userId,
+                    entraOid,
+                    {
+                        eventType: 'qr_scan_unauthorized',
+                        resourceType: 'patient',
+                        resourceId: patientId!.toString(),
+                        action: 'read',
+                        details: {
+                            reason: 'Hospital mismatch - cross-hospital access denied',
+                            requestedHospitalId: qrHospitalId,
+                            userHospitalId: hospitalId
+                        }
+                    }
+                );
+
+                return res.status(403).json({
+                    success: false,
+                    error: "Access denied - you don't have permission to access this patient's records",
+                    code: 'RBAC_ACCESS_DENIED'
+                });
+            }
+
+            // Step 3: Get QR code record for audit logging
+            const qrRecord = await PatientQRService.getPatientQRCode(pool, patientId!, qrHospitalId!);
+
+            // Step 4: Log successful scan
+            await PatientQRService.logQRScan(
+                pool,
+                {
+                    qrCodeId: qrRecord.id,
+                    patientId: patientId!,
+                    hospitalId: qrHospitalId!,
+                    scannedByUserId: userId,
+                    scannedByRole: user?.role || 'clinician',
+                    accessPurpose: sanitizedPurpose,
+                    ipAddress: req.ip,
+                    userAgent: req.headers['user-agent'],
+                    deviceType: req.headers['user-agent']?.includes('Mobile') ? 'mobile' : 'web',
+                    sessionId: (req as any).sessionID || 'no_session',
+                    requestId: req.headers['x-request-id'] as string
+                },
+                true
+            );
+
+            // Step 5: Get basic patient data from patients table
+            const patientData = await HospitalPatientService.getPatient(qrHospitalId!, patientId!);
+
+            if (!patientData) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Patient not found',
+                    code: 'PATIENT_NOT_FOUND'
+                });
+            }
+
+            // Step 6: Log data access in audit system
+            await HospitalAuditService.createAuditLog(
+                qrHospitalId!.toString(),
+                userId,
+                entraOid,
+                {
+                    eventType: 'qr_scan_success',
+                    resourceType: 'patient',
+                    resourceId: patientId!.toString(),
+                    action: 'read',
+                    details: {
+                        fhirPatientId,
+                        accessPurpose: sanitizedPurpose
+                    }
+                }
+            );
+
+            // Return simple patient data with redirect info
+            res.json({
+                success: true,
+                data: {
+                    patientId: patientData.id,
+                    hospitalId: patientData.hospitalId,
+                    firstName: patientData.firstName,
+                    lastName: patientData.lastName,
+                    mrn: patientData.mrn,
+                    dateOfBirth: patientData.dateOfBirth,
+                    gender: patientData.gender,
+                    redirectUrl: `/patients/${patientData.id}`
+                },
+                message: "Patient identified successfully - redirecting to patient details"
+            });
+        } catch (error: any) {
+            console.error("[API] QR scan error:", error.message);
+            // SECURITY: Don't expose internal error details
+            res.status(500).json({
+                success: false,
+                error: "Failed to process QR scan",
+                code: 'INTERNAL_ERROR'
+            });
+        }
+    });
+
+    /**
+     * GET /api/qr/patient-data/:qrToken
+     * Retrieve patient data using QR token for redirect
+     * SECURITY: Public endpoint - logs all access, validates tokens
+     */
+    app.get("/api/qr/patient-data/:qrToken", async (req: Request, res: Response) => {
+        try {
+            const { qrToken } = req.params;
+
+            // Input validation
+            if (!qrToken || typeof qrToken !== 'string') {
+                return res.status(400).json({
+                    success: false,
+                    error: "QR token is required"
+                });
+            }
+
+            // Prevent excessively long tokens (DoS protection)
+            if (qrToken.length > 2000) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Invalid token"
+                });
+            }
+
+            // Get Azure SQL connection pool
+            const pool = await getConnectionPool();
+
+            // Validate QR token
+            const validation = await PatientQRService.validateQRToken(pool, qrToken);
+
+            if (!validation.valid) {
+                return res.status(403).json({
+                    success: false,
+                    error: validation.error,
+                    code: 'QR_VALIDATION_FAILED'
+                });
+            }
+
+            const { patientId, hospitalId, fhirPatientId } = validation;
+
+            // Log the scan (without user authentication)
+            const qrRecord = await PatientQRService.getPatientQRCode(pool, patientId!, hospitalId!);
+            await PatientQRService.logQRScan(
+                pool,
+                {
+                    qrCodeId: qrRecord.id,
+                    patientId: patientId!,
+                    hospitalId: hospitalId!,
+                    scannedByUserId: '0', // Public scan - no user ID
+                    scannedByRole: 'public',
+                    accessPurpose: 'qr_scan',
+                    ipAddress: req.ip,
+                    userAgent: req.headers['user-agent'],
+                    deviceType: req.headers['user-agent']?.includes('Mobile') ? 'mobile' : 'web',
+                    sessionId: (req as any).sessionID || 'no_session',
+                    requestId: req.headers['x-request-id'] as string
+                },
+                true
+            );
+
+            // Fetch basic patient data
+            const patientData = await HospitalPatientService.getPatient(hospitalId!, patientId!);
+
+            if (!patientData) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Patient not found',
+                    code: 'PATIENT_NOT_FOUND'
+                });
+            }
+
+            res.json({
+                success: true,
+                data: {
+                    patientId: patientData.id,
+                    hospitalId: patientData.hospitalId,
+                    firstName: patientData.firstName,
+                    lastName: patientData.lastName,
+                    mrn: patientData.mrn,
+                    dateOfBirth: patientData.dateOfBirth,
+                    gender: patientData.gender,
+                    redirectUrl: `/patients/${patientData.id}`
+                },
+                message: "Patient identified successfully"
+            });
+        } catch (error: any) {
+            console.error("[API] Get patient data by QR token error:", error.message);
+            // SECURITY: Don't expose internal error details
+            res.status(500).json({
+                success: false,
+                error: "Failed to retrieve patient data"
+            });
+        }
+    });
+
+    /**
+     * GET /api/qr/patient/:patientId
+     * Get existing QR code metadata for a patient
+     * SECURITY: Requires authentication, returns only metadata (no token)
+     */
+    app.get("/api/qr/patient/:patientId", async (req: Request, res: Response) => {
+        try {
+            const hospitalId = getHospitalId(req);
+            const { patientId } = req.params;
+
+            // Input validation
+            if (!patientId || !/^[a-zA-Z0-9\-_]+$/.test(patientId) || patientId.length > 100) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Invalid patient ID format"
+                });
+            }
+
+            // Get Azure SQL connection pool
+            const pool = await getConnectionPool();
+
+            const qrData = await PatientQRService.getPatientQRCode(
+                pool,
+                patientId,
+                hospitalId
+            );
+
+            if (!qrData) {
+                return res.status(404).json({
+                    success: false,
+                    error: "No active QR code found for this patient"
+                });
+            }
+
+            // SECURITY: Never return the actual token - only metadata
+            res.json({
+                success: true,
+                data: {
+                    qrCodeId: qrData.id,
+                    fhirPatientId: qrData.fhir_patient_id,
+                    masterPatientIdentifier: qrData.master_patient_identifier,
+                    isActive: qrData.is_active,
+                    expiresAt: qrData.token_expires_at,
+                    createdAt: qrData.created_at
+                }
+            });
+        } catch (error: any) {
+            console.error("[API] Get patient QR error:", error.message);
+            res.status(500).json({
+                success: false,
+                error: "Failed to retrieve QR code"
+            });
+        }
+    });
+
+    /**
+     * POST /api/qr/revoke
+     * Revoke a QR code (security incident, patient merge, etc.)
+     * SECURITY: Requires authentication, validates input, logs action
+     */
+    app.post("/api/qr/revoke", async (req: Request, res: Response) => {
+        try {
+            const userId = getUserId(req);
+            const entraOid = getEntraOid(req);
+            const { qrCodeId, reason } = req.body;
+
+            // Input validation
+            if (!qrCodeId || typeof qrCodeId !== 'number' || qrCodeId <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Valid QR code ID is required"
+                });
+            }
+
+            if (!reason || typeof reason !== 'string' || reason.length < 10 || reason.length > 500) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Valid reason is required (10-500 characters)"
+                });
+            }
+
+            // Get Azure SQL connection pool
+            const pool = await getConnectionPool();
+
+            await PatientQRService.revokeQRCode(pool, qrCodeId, userId, reason);
+
+            // Log revocation
+            await HospitalAuditService.createAuditLog(
+                getHospitalId(req),
+                userId,
+                entraOid,
+                {
+                    eventType: 'qr_revoked',
+                    resourceType: 'qr_code',
+                    resourceId: qrCodeId.toString(),
+                    action: 'update',
+                    details: {
+                        reason,
+                        revokedBy: userId
+                    }
+                }
+            );
+
+            res.json({
+                success: true,
+                message: "QR code revoked successfully"
+            });
+        } catch (error: any) {
+            console.error("[API] Revoke QR error:", error.message);
+            res.status(500).json({
+                success: false,
+                error: "Failed to revoke QR code"
+            });
+        }
+    });
+}
+
+
+
+// ============================================================================
 // MAIN REGISTRATION FUNCTION
 // ============================================================================
 
@@ -779,6 +1272,7 @@ export async function registerApiRoutes(httpServer: Server, app: Express): Promi
     registerLabEndpoints(app);
     registerChatEndpoints(app);
     registerAuditEndpoints(app);
+    registerQRIdentityEndpoints(app);
 
     console.log("✅ All API routes registered with hospital isolation");
 

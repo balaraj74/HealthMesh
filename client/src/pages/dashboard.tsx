@@ -298,21 +298,30 @@ export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useQuery<{ success: boolean; data: DashboardStats }, Error, DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
     select: (response) => response.data,
+    refetchInterval: 15000, // Refresh stats every 15 seconds
   });
 
-  const { data: recentCases, isLoading: casesLoading } = useQuery({
+  const { data: recentCases = [], isLoading: casesLoading } = useQuery<ClinicalCase[]>({
     queryKey: ["/api/cases"],
-    queryFn: async () => {
+    queryFn: async (): Promise<ClinicalCase[]> => {
       const response = await apiRequest("GET", "/api/cases");
       const data: { success: boolean; data: ClinicalCase[] } = await response.json();
-      return data.data;
+      return Array.isArray(data.data) ? data.data : [];
     },
+    refetchInterval: 10000, // Refresh every 10 seconds for real-time updates
   });
 
-  const { data: alerts, isLoading: alertsLoading } = useQuery<{ success: boolean; data: RiskAlert[] }, Error, RiskAlert[]>({
-    queryKey: ["/api/alerts"],
-    select: (response) => response.data,
+  // Extract alerts from cases' aiAnalysis data (since they're stored there, not separately)
+  // Use Array.isArray check to handle undefined/non-array cases on initial load
+  const casesList = Array.isArray(recentCases) ? recentCases : [];
+  const allAlerts: RiskAlert[] = casesList.flatMap((c: any) => {
+    const savedAlerts = c?.aiAnalysis?.riskAlerts ?? [];
+    return savedAlerts.filter((a: any): a is RiskAlert =>
+      a != null && typeof a === 'object' && 'severity' in a && 'id' in a
+    );
   });
+
+  const alertsLoading = casesLoading; // Alerts loading tied to cases loading
 
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
@@ -394,7 +403,7 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-semibold">Risk & Safety Alerts</CardTitle>
             </CardHeader>
             <CardContent className="pt-3">
-              <AlertsList alerts={alerts} loading={alertsLoading} />
+              <AlertsList alerts={allAlerts} loading={alertsLoading} />
             </CardContent>
           </Card>
 

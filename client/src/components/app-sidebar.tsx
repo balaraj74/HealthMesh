@@ -15,6 +15,7 @@ import {
   VscSignOut,
   VscAccount,
 } from "react-icons/vsc";
+import { QrCode } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -51,6 +52,11 @@ const clinicalNavItems = [
     title: "Lab Reports",
     url: "/labs",
     icon: VscFile,
+  },
+  {
+    title: "QR Scan",
+    url: "/qr-scan",
+    icon: QrCode,
   },
 ];
 

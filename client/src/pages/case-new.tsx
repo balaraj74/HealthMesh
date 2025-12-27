@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { useLocation, useSearch } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -68,13 +68,12 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
         return (
           <div key={step.id} className="flex items-center">
             <div
-              className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : isCompleted
+              className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${isActive
+                ? "bg-primary text-primary-foreground"
+                : isCompleted
                   ? "bg-primary/20 text-primary"
                   : "bg-muted text-muted-foreground"
-              }`}
+                }`}
             >
               {isCompleted ? (
                 <Check className="h-4 w-4" />
@@ -85,9 +84,8 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             </div>
             {index < steps.length - 1 && (
               <div
-                className={`w-8 h-0.5 mx-2 ${
-                  isCompleted ? "bg-primary" : "bg-muted"
-                }`}
+                className={`w-8 h-0.5 mx-2 ${isCompleted ? "bg-primary" : "bg-muted"
+                  }`}
               />
             )}
           </div>
@@ -103,7 +101,7 @@ function PatientSelectionStep({
   onSelect,
   isLoading,
 }: {
-  patients?: Patient[];
+  patients?: any[];  // Using any to match actual API response structure
   selectedPatientId: string;
   onSelect: (id: string) => void;
   isLoading: boolean;
@@ -146,11 +144,10 @@ function PatientSelectionStep({
       {patients.map((patient) => (
         <Card
           key={patient.id}
-          className={`cursor-pointer transition-colors ${
-            selectedPatientId === patient.id
-              ? "border-primary bg-primary/5"
-              : "hover-elevate"
-          }`}
+          className={`cursor-pointer transition-colors ${selectedPatientId === patient.id
+            ? "border-primary bg-primary/5"
+            : "hover-elevate"
+            }`}
           onClick={() => onSelect(patient.id)}
           data-testid={`card-patient-${patient.id}`}
         >
@@ -159,20 +156,20 @@ function PatientSelectionStep({
               <RadioGroupItem value={patient.id} id={patient.id} className="mt-1" />
               <div className="flex-1">
                 <label htmlFor={patient.id} className="font-medium cursor-pointer">
-                  {patient.demographics.firstName} {patient.demographics.lastName}
+                  {patient.firstName || patient.demographics?.firstName} {patient.lastName || patient.demographics?.lastName}
                 </label>
                 <p className="text-sm text-muted-foreground">
-                  MRN: {patient.demographics.mrn}
+                  MRN: {patient.mrn || patient.demographics?.mrn}
                 </p>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   <Badge variant="outline" className="text-xs">
-                    {patient.demographics.gender}
+                    {patient.gender || patient.demographics?.gender || 'N/A'}
                   </Badge>
                   <Badge variant="outline" className="text-xs">
-                    {patient.diagnoses.length} conditions
+                    {(patient.diagnoses?.length || 0)} conditions
                   </Badge>
                   <Badge variant="outline" className="text-xs">
-                    {patient.medications.length} medications
+                    {(patient.medications?.length || 0)} medications
                   </Badge>
                 </div>
               </div>
@@ -313,7 +310,7 @@ function ReviewStep({
   uploadedFiles,
 }: {
   form: ReturnType<typeof useForm<CaseFormData>>;
-  patient?: Patient;
+  patient?: any;
   uploadedFiles: File[];
 }) {
   const values = form.getValues();
@@ -337,20 +334,20 @@ function ReviewStep({
               <div>
                 <p className="text-sm text-muted-foreground">Name</p>
                 <p className="font-medium">
-                  {patient.demographics.firstName} {patient.demographics.lastName}
+                  {patient.firstName || patient.demographics?.firstName} {patient.lastName || patient.demographics?.lastName}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">MRN</p>
-                <p className="font-mono">{patient.demographics.mrn}</p>
+                <p className="font-mono">{patient.mrn || patient.demographics?.mrn}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Conditions</p>
-                <p>{patient.diagnoses.length} active</p>
+                <p>{patient.diagnoses?.length || 0} active</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Medications</p>
-                <p>{patient.medications.length} current</p>
+                <p>{patient.medications?.length || 0} current</p>
               </div>
             </div>
           ) : (
@@ -404,8 +401,8 @@ function ReviewStep({
             <div>
               <p className="text-sm font-medium">Ready for AI Analysis</p>
               <p className="text-xs text-muted-foreground">
-                Upon submission, the multi-agent system will analyze this case 
-                and provide evidence-based recommendations. Results are for 
+                Upon submission, the multi-agent system will analyze this case
+                and provide evidence-based recommendations. Results are for
                 decision support only and require clinical review.
               </p>
             </div>
@@ -418,11 +415,33 @@ function ReviewStep({
 
 export default function CaseNew() {
   const [, navigate] = useLocation();
+  const searchString = useSearch();
   const [currentStep, setCurrentStep] = useState(1);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [preSelectedPatientId, setPreSelectedPatientId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const { data: patients, isLoading: patientsLoading } = useQuery<{ success: boolean; data: Patient[] }>({
+  // API returns patients with firstName, lastName, mrn directly on the object (not nested in demographics)
+  type APIPatient = {
+    id: string;
+    hospitalId?: string;
+    firstName: string;
+    lastName: string;
+    mrn: string;
+    gender?: string;
+    dateOfBirth?: string;
+    diagnoses?: any[];
+    medications?: any[];
+    allergies?: any[];
+    demographics?: {
+      firstName?: string;
+      lastName?: string;
+      mrn?: string;
+      gender?: string;
+    };
+  };
+
+  const { data: patients, isLoading: patientsLoading } = useQuery<{ success: boolean; data: APIPatient[] }, Error, APIPatient[]>({
     queryKey: ["/api/patients"],
     select: (response) => response.data,
   });
@@ -436,20 +455,39 @@ export default function CaseNew() {
     },
   });
 
-  const selectedPatient = patients?.find(p => p.id === form.watch("patientId"));
+  // Check for patientId in URL query parameters
+  useEffect(() => {
+    const params = new URLSearchParams(searchString);
+    const urlPatientId = params.get('patientId');
+    if (urlPatientId && !preSelectedPatientId) {
+      setPreSelectedPatientId(urlPatientId);
+      form.setValue('patientId', urlPatientId);
+      // Skip to step 2 since patient is already selected
+      setCurrentStep(2);
+    }
+  }, [searchString, form, preSelectedPatientId]);
+
+  const selectedPatient = patients?.find((p: APIPatient) => p.id === form.watch("patientId"));
 
   const createCaseMutation = useMutation({
     mutationFn: async (data: InsertCase) => {
       const response = await apiRequest("POST", "/api/cases", data);
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
       toast({
         title: "Case created",
         description: "The case has been submitted for AI analysis.",
       });
-      navigate(`/cases/${data.id}`);
+      // API returns { success: true, data: { id, ... } }
+      const caseId = response?.data?.id || response?.id;
+      if (caseId) {
+        navigate(`/cases/${caseId}`);
+      } else {
+        console.error("Case created but no ID returned:", response);
+        navigate("/cases");
+      }
     },
     onError: () => {
       toast({
