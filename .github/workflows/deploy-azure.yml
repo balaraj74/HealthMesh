@@ -25,7 +25,7 @@ jobs:
         cache: 'npm'
 
     - name: 📦 Install dependencies
-      run: npm ci
+      run: npm ci --prefer-offline --no-audit --no-fund
 
     - name: 🔨 Build application
       env:
@@ -35,8 +35,8 @@ jobs:
         NODE_ENV: production
       run: npm run build
 
-    - name: 📁 Install production dependencies
-      run: npm ci --production --ignore-scripts
+    - name: 🧹 Prune dev dependencies
+      run: npm prune --production
 
     - name: 📦 Prepare deployment package
       run: |
@@ -46,7 +46,7 @@ jobs:
         # Copy built application
         cp -r dist deployment/
         
-        # Copy production node_modules
+        # Copy only production node_modules (already pruned)
         cp -r node_modules deployment/
         
         # Copy package files
@@ -54,12 +54,14 @@ jobs:
         cp package-lock.json deployment/
         
         # Create .deployment file to tell Azure not to build
-        echo "[config]" > deployment/.deployment
-        echo "SCM_DO_BUILD_DURING_DEPLOYMENT=false" >> deployment/.deployment
+        cat > deployment/.deployment << 'EOF'
+        [config]
+        SCM_DO_BUILD_DURING_DEPLOYMENT=false
+        EOF
         
-        # Zip the deployment package
+        # Zip the deployment package with maximum compression
         cd deployment
-        zip -r ../deploy.zip . -q
+        zip -r ../deploy.zip . -q -9
         cd ..
         echo "✅ Deployment package created: $(du -h deploy.zip | cut -f1)"
 
