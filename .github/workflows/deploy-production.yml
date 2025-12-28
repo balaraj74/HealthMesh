@@ -45,6 +45,13 @@ jobs:
 
     - name: 📦 Prepare deployment package
       run: |
+        # Ensure Azure doesn't try to build - set these via az cli too
+        az webapp config appsettings set \
+          --resource-group healthmesh \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false ENABLE_ORYX_BUILD=false \
+          --output none
+        
         # Create web.config for Azure to serve the Node app
         cat > web.config << 'EOF'
         <?xml version="1.0" encoding="utf-8"?>
@@ -84,7 +91,7 @@ jobs:
         # Create .deployment file to skip build on Azure
         cat > .deployment << 'EOF'
         [config]
-        SCM_DO_BUILD_DURING_DEPLOYMENT = false
+        SCM_DO_BUILD_DURING_DEPLOYMENT=false
         EOF
         
         # Zip everything needed with maximum compression (-9)
@@ -92,12 +99,16 @@ jobs:
         echo "✅ Deployment package created: $(du -h deploy.zip | cut -f1)"
 
     - name: 🚀 Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        package: deploy.zip
+        clean: true
+
+    - name: 🔄 Restart App Service
       run: |
-        az webapp deployment source config-zip \
-          --resource-group healthmesh \
-          --name ${{ env.AZURE_WEBAPP_NAME }} \
-          --src deploy.zip \
-          --timeout 600
+        az webapp restart --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group healthmesh
+        echo "✅ App service restarted"
 
     - name: ✅ Deployment complete
       run: |
