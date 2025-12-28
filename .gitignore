@@ -33,3 +33,4 @@ coverage/
 *.zip
 vite.config.ts.*server/scripts/fix-production.ts
 server/scripts/setup-production.cjs
+server/scripts/fix-production.ts

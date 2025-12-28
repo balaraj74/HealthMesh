@@ -33,22 +33,36 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRole,
 }) => {
   const isAuthenticated = useIsAuthenticated();
-  const { inProgress, accounts } = useMsal();
+  const { inProgress, accounts, instance } = useMsal();
   const [, setLocation] = useLocation();
   const [isInitializing, setIsInitializing] = useState(true);
+  const [hasWaited, setHasWaited] = useState(false);
+
+  // Give MSAL time to restore session from cache
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setHasWaited(true);
+    }, 500); // Wait 500ms for MSAL to restore session
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
-    // Wait for MSAL to finish any in-progress operations
-    if (inProgress === InteractionStatus.None) {
+    // Wait for MSAL to finish any in-progress operations AND for the wait timer
+    if (inProgress === InteractionStatus.None && hasWaited) {
       setIsInitializing(false);
 
+      // Check both isAuthenticated hook and direct account check
+      const hasAccounts = accounts.length > 0 || instance.getAllAccounts().length > 0;
+
+      console.log("[ProtectedRoute] Auth check - isAuthenticated:", isAuthenticated, "accounts:", accounts.length, "hasAccounts:", hasAccounts);
+
       // Redirect to login if not authenticated via Microsoft Entra ID
-      if (!isAuthenticated) {
+      if (!isAuthenticated && !hasAccounts) {
         console.log("[ProtectedRoute] User not authenticated - redirecting to login");
         setLocation("/login");
       }
     }
-  }, [isAuthenticated, inProgress, setLocation]);
+  }, [isAuthenticated, inProgress, setLocation, hasWaited, accounts, instance]);
 
   // Show loading state while MSAL is initializing
   if (isInitializing || inProgress !== InteractionStatus.None) {
@@ -75,8 +89,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
+  // Check if user has accounts (from cache or fresh login)
+  const hasAccounts = accounts.length > 0;
+
   // Not authenticated - will redirect
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !hasAccounts) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="text-center space-y-4">

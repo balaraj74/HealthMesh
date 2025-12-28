@@ -75,11 +75,14 @@ export default function Login() {
         console.log("[Login] User authenticated - redirecting to dashboard");
         console.log("[Login] Active account:", instance.getActiveAccount()?.username);
         hasRedirected.current = true;
-        // Use window.location for a clean navigation (ensures full app reload with auth state)
-        window.location.href = "/";
+        // Use setLocation for SPA navigation (no full page reload)
+        // Adding a small delay to ensure MSAL state is fully propagated
+        setTimeout(() => {
+          setLocation("/");
+        }, 100);
       }
     }
-  }, [isAuthenticated, inProgress, accounts, instance]);
+  }, [isAuthenticated, inProgress, accounts, instance, setLocation]);
 
   // Show loading while MSAL is handling redirect
   // inProgress can be: "none", "handleRedirect", "login", "logout", etc.
