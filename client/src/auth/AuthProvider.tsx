@@ -35,20 +35,37 @@ const initializeMsal = async (): Promise<void> => {
 
   msalInitializationPromise = (async () => {
     try {
+      console.log("[MSAL] Starting initialization...");
+      console.log("[MSAL] Current URL:", window.location.href);
+      console.log("[MSAL] URL hash present:", !!window.location.hash);
+
       await msalInstance.initialize();
+      console.log("[MSAL] Instance initialized, calling handleRedirectPromise...");
 
       // Handle redirect response after login
       const response = await msalInstance.handleRedirectPromise();
+      console.log("[MSAL] handleRedirectPromise result:", response ? "Got response" : "No response (null)");
+
       if (response) {
         // Set the active account after successful redirect
         msalInstance.setActiveAccount(response.account);
-        console.log("[MSAL] Login redirect completed, account set");
+        console.log("[MSAL] Login redirect completed, account set:", response.account?.username);
+        console.log("[MSAL] Token type:", response.tokenType);
+
+        // Clear the URL hash/query params to prevent re-processing on refresh
+        if (window.location.hash || window.location.search.includes("code=")) {
+          console.log("[MSAL] Clearing authentication params from URL");
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
       } else {
         // Account selection logic for existing sessions
         const accounts = msalInstance.getAllAccounts();
+        console.log("[MSAL] No redirect response. Existing accounts:", accounts.length);
         if (accounts.length > 0) {
           msalInstance.setActiveAccount(accounts[0]);
-          console.log("[MSAL] Existing account found and set");
+          console.log("[MSAL] Existing account found and set:", accounts[0].username);
+        } else {
+          console.log("[MSAL] No accounts found - user is not authenticated");
         }
       }
 

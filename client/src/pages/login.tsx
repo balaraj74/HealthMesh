@@ -12,9 +12,10 @@
  * using Microsoft Entra ID (Azure AD) for authentication.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { useLocation } from "wouter";
+import { InteractionStatus } from "@azure/msal-browser";
 import { loginRequest, isEntraConfigured } from "../auth/authConfig";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,23 +43,43 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessingCallback, setIsProcessingCallback] = useState(false);
+  const hasRedirected = useRef(false);
+
+  // Check if this is a redirect callback from Microsoft
+  const isRedirectCallback = window.location.hash.includes("code=") ||
+    window.location.hash.includes("id_token=") ||
+    window.location.search.includes("code=");
 
   // Debug logging
   useEffect(() => {
     console.log("[Login] Auth state - isAuthenticated:", isAuthenticated, "inProgress:", inProgress, "accounts:", accounts.length);
     console.log("[Login] Current URL:", window.location.href);
-    console.log("[Login] URL has hash:", window.location.hash.length > 1);
-    console.log("[Login] URL has code param:", window.location.search.includes("code="));
-  }, [isAuthenticated, inProgress, accounts]);
+    console.log("[Login] Is redirect callback:", isRedirectCallback);
+    console.log("[Login] Active account:", instance.getActiveAccount()?.username);
+  }, [isAuthenticated, inProgress, accounts, isRedirectCallback, instance]);
+
+  // Handle redirect callback
+  useEffect(() => {
+    if (isRedirectCallback && inProgress === InteractionStatus.HandleRedirect) {
+      setIsProcessingCallback(true);
+      console.log("[Login] Processing redirect callback...");
+    }
+  }, [isRedirectCallback, inProgress]);
 
   // Redirect to dashboard if already authenticated
   useEffect(() => {
-    if (isAuthenticated && inProgress === "none") {
-      console.log("[Login] User authenticated - redirecting to dashboard");
-      console.log("[Login] Active account:", instance.getActiveAccount()?.username);
-      setLocation("/");
+    // Only redirect when MSAL is completely done processing
+    if (inProgress === InteractionStatus.None && !hasRedirected.current) {
+      if (isAuthenticated && accounts.length > 0) {
+        console.log("[Login] User authenticated - redirecting to dashboard");
+        console.log("[Login] Active account:", instance.getActiveAccount()?.username);
+        hasRedirected.current = true;
+        // Use window.location for a clean navigation (ensures full app reload with auth state)
+        window.location.href = "/";
+      }
     }
-  }, [isAuthenticated, inProgress, setLocation, instance]);
+  }, [isAuthenticated, inProgress, accounts, instance]);
 
   // Show loading while MSAL is handling redirect
   // inProgress can be: "none", "handleRedirect", "login", "logout", etc.
