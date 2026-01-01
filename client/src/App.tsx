@@ -27,6 +27,7 @@ import Chat from "@/pages/chat";
 import AuditLogs from "@/pages/audit";
 import Settings from "@/pages/settings";
 import QRScan from "@/pages/qr-scan";
+import EarlyDeterioration from "@/pages/early-deterioration";
 
 function Router() {
   return (
@@ -79,6 +80,11 @@ function Router() {
       <Route path="/orchestrator">
         <ProtectedRoute>
           <Orchestrator />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/early-deterioration">
+        <ProtectedRoute>
+          <EarlyDeterioration />
         </ProtectedRoute>
       </Route>
       <Route path="/risk-safety">

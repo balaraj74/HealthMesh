@@ -15,7 +15,7 @@ import {
   VscSignOut,
   VscAccount,
 } from "react-icons/vsc";
-import { QrCode } from "lucide-react";
+import { QrCode, Activity } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -65,6 +65,12 @@ const aiNavItems = [
     title: "Agent Orchestrator",
     url: "/orchestrator",
     icon: VscCircuitBoard,
+  },
+  {
+    title: "Early Deterioration",
+    url: "/early-deterioration",
+    icon: Activity,
+    badge: "AI",
   },
   {
     title: "Risk & Safety",

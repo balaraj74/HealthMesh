@@ -1274,6 +1274,15 @@ export async function registerApiRoutes(httpServer: Server, app: Express): Promi
     registerAuditEndpoints(app);
     registerQRIdentityEndpoints(app);
 
+    // Early Deterioration Detection Agent routes
+    try {
+        const deteriorationRoutes = await import("./api/deterioration-routes");
+        app.use("/api/deterioration", deteriorationRoutes.default);
+        console.log("✅ Early Deterioration Detection Agent routes registered");
+    } catch (error) {
+        console.warn("⚠️  Deterioration routes not loaded:", (error as Error).message);
+    }
+
     console.log("✅ All API routes registered with hospital isolation");
 
     return httpServer;

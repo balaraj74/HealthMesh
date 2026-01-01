@@ -18,19 +18,19 @@ jobs:
     - name: 📥 Checkout code
       uses: actions/checkout@v4
 
-    - name: 🔐 Azure Login
+    - name: � Azure Login
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: 🟢 Setup Node.js
+    - name: �🟢 Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
 
     - name: 📦 Install dependencies
-      run: npm ci --prefer-offline --no-audit --no-fund
+      run: npm ci
 
     - name: 🔨 Build application
       env:
@@ -40,39 +40,32 @@ jobs:
         NODE_ENV: production
       run: npm run build
 
-    - name: 🧹 Prune dev dependencies
-      run: npm prune --production
+    - name: 📁 Install production dependencies
+      run: npm ci --production --ignore-scripts
 
     - name: 📦 Prepare deployment package
       run: |
-        # Ensure Azure doesn't try to build - set these via az cli too
-        az webapp config appsettings set \
-          --resource-group healthmesh \
-          --name ${{ env.AZURE_WEBAPP_NAME }} \
-          --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false ENABLE_ORYX_BUILD=false \
-          --output none
-        
         # Create web.config for Azure to serve the Node app
         cat > web.config << 'EOF'
         <?xml version="1.0" encoding="utf-8"?>
         <configuration>
           <system.webServer>
             <handlers>
-              <add name="iisnode" path="dist/index.cjs" verb="*" modules="iisnode"/>
+              <add name="iisnode" path="server/index.js" verb="*" modules="iisnode"/>
             </handlers>
             <rewrite>
               <rules>
                 <rule name="NodeInspector" patternSyntax="ECMAScript" stopProcessing="true">
-                  <match url="^dist/index.cjs\/debug[\\/]?" />
+                  <match url="^server/index.js\/debug[\/]?" />
                 </rule>
                 <rule name="StaticContent">
-                  <action type="Rewrite" url="dist/public{REQUEST_URI}"/>
+                  <action type="Rewrite" url="dist{REQUEST_URI}"/>
                 </rule>
                 <rule name="DynamicContent">
                   <conditions>
                     <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
                   </conditions>
-                  <action type="Rewrite" url="dist/index.cjs"/>
+                  <action type="Rewrite" url="server/index.js"/>
                 </rule>
               </rules>
             </rewrite>
@@ -88,27 +81,27 @@ jobs:
         </configuration>
         EOF
         
-        # Create .deployment file to skip build on Azure
+        # Create .deployment file to skip build
         cat > .deployment << 'EOF'
         [config]
-        SCM_DO_BUILD_DURING_DEPLOYMENT=false
+        SCM_DO_BUILD_DURING_DEPLOYMENT = false
         EOF
         
-        # Zip everything needed with maximum compression (-9)
-        zip -r deploy.zip dist node_modules package.json web.config .deployment -q -9
+        # Zip everything needed
+        zip -r deploy.zip dist server shared node_modules package.json web.config .deployment -q
         echo "✅ Deployment package created: $(du -h deploy.zip | cut -f1)"
 
-    - name: 🚀 Deploy to Azure Web App
-      uses: azure/webapps-deploy@v2
+    - name: � Azure Login
+      uses: azure/login@v1
       with:
-        app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        package: deploy.zip
-        clean: true
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: 🔄 Restart App Service
+    - name: 🚀 Deploy to Azure Web App
       run: |
-        az webapp restart --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group healthmesh
-        echo "✅ App service restarted"
+        az webapp deployment source config-zip \
+          --resource-group healthmesh \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --src deploy.zip
 
     - name: ✅ Deployment complete
       run: |
