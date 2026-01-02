@@ -73,9 +73,15 @@ const aiNavItems = [
     badge: "AI",
   },
   {
+    title: "Medication Safety",
+    url: "/medication-safety",
+    icon: VscShield,
+    badge: "AI",
+  },
+  {
     title: "Risk & Safety",
     url: "/risk-safety",
-    icon: VscShield,
+    icon: VscWarning,
   },
   {
     title: "Clinical Chat",

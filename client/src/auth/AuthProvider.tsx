@@ -55,7 +55,9 @@ const initializeMsal = async (): Promise<void> => {
         // Clear the URL hash/query params to prevent re-processing on refresh
         if (window.location.hash || window.location.search.includes("code=")) {
           console.log("[MSAL] Clearing authentication params from URL");
-          window.history.replaceState({}, document.title, window.location.pathname);
+          // Navigate to root/dashboard after successful login
+          window.history.replaceState({}, document.title, "/");
+          console.log("[MSAL] Navigated to dashboard after login");
         }
       } else {
         // Account selection logic for existing sessions

@@ -23,7 +23,21 @@ import { Configuration, LogLevel } from "@azure/msal-browser";
 // ==========================================
 const CLIENT_ID = import.meta.env.VITE_AZURE_AD_CLIENT_ID || "";
 const TENANT_ID = import.meta.env.VITE_AZURE_AD_TENANT_ID || "";
-const REDIRECT_URI = import.meta.env.VITE_AZURE_AD_REDIRECT_URI || "http://localhost:5000/login";
+
+// Dynamically determine redirect URI based on current hostname
+function getRedirectUriFromEnv(): string {
+  // First, try environment variable
+  const envRedirectUri = import.meta.env.VITE_AZURE_AD_REDIRECT_URI;
+  if (envRedirectUri) {
+    return envRedirectUri;
+  }
+
+  // Fallback: construct from current location
+  const currentOrigin = window.location.origin;
+  return `${currentOrigin}/login`;
+}
+
+const REDIRECT_URI = getRedirectUriFromEnv();
 
 // ==========================================
 // ENVIRONMENT VERIFICATION - Log at startup
@@ -34,6 +48,8 @@ console.log("╠═════════════════════�
 console.log(`║ FRONTEND TENANT: ${TENANT_ID || "❌ NOT SET"}`);
 console.log(`║ FRONTEND CLIENT: ${CLIENT_ID || "❌ NOT SET"}`);
 console.log(`║ REDIRECT URI: ${REDIRECT_URI}`);
+console.log(`║ CURRENT ORIGIN: ${window.location.origin}`);
+console.log(`║ ENVIRONMENT: ${import.meta.env.MODE}`);
 console.log("╚════════════════════════════════════════════════════════════╝");
 
 // Validate configuration
@@ -74,7 +90,10 @@ export const msalConfig: Configuration = {
     authority: getAuthority(),
     redirectUri: REDIRECT_URI,
     postLogoutRedirectUri: REDIRECT_URI,
-    navigateToLoginRequestUrl: true,
+    // CRITICAL: Set to false to prevent redirect loops after login
+    // When true, MSAL tries to navigate back to the original request URL
+    // which can cause infinite redirect loops in some configurations
+    navigateToLoginRequestUrl: false,
   },
   cache: {
     // sessionStorage - cleared when browser closes (more secure)

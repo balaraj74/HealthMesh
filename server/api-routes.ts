@@ -1283,6 +1283,15 @@ export async function registerApiRoutes(httpServer: Server, app: Express): Promi
         console.warn("⚠️  Deterioration routes not loaded:", (error as Error).message);
     }
 
+    // Medication Safety Engine routes
+    try {
+        const medicationSafetyRoutes = await import("./api/medication-safety-routes");
+        app.use("/api/medication-safety", medicationSafetyRoutes.default);
+        console.log("✅ Medication Safety Engine routes registered");
+    } catch (error) {
+        console.warn("⚠️  Medication Safety routes not loaded:", (error as Error).message);
+    }
+
     console.log("✅ All API routes registered with hospital isolation");
 
     return httpServer;
