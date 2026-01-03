@@ -29,6 +29,7 @@ import Settings from "@/pages/settings";
 import QRScan from "@/pages/qr-scan";
 import EarlyDeterioration from "@/pages/early-deterioration";
 import MedicationSafety from "@/pages/medication-safety";
+import LabTrends from "@/pages/lab-trends";
 
 function Router() {
   return (
@@ -91,6 +92,11 @@ function Router() {
       <Route path="/medication-safety">
         <ProtectedRoute>
           <MedicationSafety />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/lab-trends">
+        <ProtectedRoute>
+          <LabTrends />
         </ProtectedRoute>
       </Route>
       <Route path="/risk-safety">

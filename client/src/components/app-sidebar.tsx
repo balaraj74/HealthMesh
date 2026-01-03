@@ -79,6 +79,12 @@ const aiNavItems = [
     badge: "AI",
   },
   {
+    title: "Lab Trends",
+    url: "/lab-trends",
+    icon: VscPulse,
+    badge: "AI",
+  },
+  {
     title: "Risk & Safety",
     url: "/risk-safety",
     icon: VscWarning,

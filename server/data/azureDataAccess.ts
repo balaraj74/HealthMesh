@@ -515,12 +515,15 @@ export class AzureLabReportService {
             .input("patientId", sql.NVarChar, data.patientId)
             .input("caseId", sql.NVarChar, data.caseId || null)
             .input("reportType", sql.NVarChar, data.reportType || null)
+            .input("fileName", sql.NVarChar, data.fileName || null)
+            .input("fileType", sql.NVarChar, data.fileType || null)
             .input("results", sql.NVarChar, JSON.stringify(data.results || null))
+            .input("extractedData", sql.NVarChar, JSON.stringify(data.extractedData || data.results || null))
             .input("status", sql.NVarChar, data.status || "pending")
             .input("orderedByUserId", sql.NVarChar, userId)
             .query(`
-                INSERT INTO lab_reports (id, hospital_id, patient_id, case_id, report_type, results, status, ordered_by_user_id, report_date)
-                VALUES (@id, @hospitalId, @patientId, @caseId, @reportType, @results, @status, @orderedByUserId, GETUTCDATE())
+                INSERT INTO lab_reports (id, hospital_id, patient_id, case_id, report_type, file_name, file_type, results, extracted_data, status, ordered_by_user_id, report_date)
+                VALUES (@id, @hospitalId, @patientId, @caseId, @reportType, @fileName, @fileType, @results, @extractedData, @status, @orderedByUserId, GETUTCDATE())
             `);
 
         return { id };

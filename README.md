@@ -1,15 +1,21 @@
 <p align="center">
+  <img src="https://img.shields.io/badge/Version-2.0.0-green?style=for-the-badge" alt="Version 2.0.0" />
   <img src="https://img.shields.io/badge/Microsoft%20Azure-Healthcare-0078D4?style=for-the-badge&logo=microsoft-azure&logoColor=white" alt="Azure Healthcare" />
   <img src="https://img.shields.io/badge/FHIR%20R4-Compliant-success?style=for-the-badge" alt="FHIR R4" />
   <img src="https://img.shields.io/badge/HIPAA-Ready-blue?style=for-the-badge" alt="HIPAA Ready" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Azure%20OpenAI-GPT--4o-0078D4?style=for-the-badge&logo=openai&logoColor=white" alt="Azure OpenAI" />
+  <img src="https://img.shields.io/badge/Microsoft%20Entra%20ID-Auth-purple?style=for-the-badge&logo=microsoft&logoColor=white" alt="Entra ID" />
   <img src="https://img.shields.io/badge/Microsoft%20Imagine%20Cup-2026-purple?style=for-the-badge" alt="Imagine Cup 2026" />
 </p>
 
-<h1 align="center">🏥 HealthMesh</h1>
+<h1 align="center">🏥 HealthMesh v2.0</h1>
 
 <p align="center">
   <strong>Intelligent Clinical Decision Support Platform</strong><br/>
-  A multi-agent healthcare orchestration system powered by Microsoft Azure AI Services
+  A production-ready, multi-agent healthcare orchestration system powered by Microsoft Azure AI Services
 </p>
 
 <p align="center">
@@ -18,92 +24,153 @@
 
 ---
 
-## 🌟 Overview
+## 📋 Release Notes - Version 2.0.0
 
-**HealthMesh** is an enterprise-grade, multi-tenant clinical decision support platform designed to assist healthcare professionals in making informed decisions for complex patient cases. The platform leverages Microsoft Azure's AI and cloud services to provide real-time clinical insights, evidence-based recommendations, and transparent AI reasoning.
+**Release Date:** January 3, 2026
 
-The system implements a **5-Agent Clinical Intelligence Pipeline** that works collaboratively to analyze patient data, assess risks, generate differential diagnoses, validate against medical guidelines, ensure medication safety, and synthesize evidence-backed recommendations.
+### 🆕 What's New in v2.0
+
+| Feature | Description |
+|---------|-------------|
+| **🧠 Azure OpenAI Integration** | GPT-4o powered clinical reasoning with intelligent fallback |
+| **⚡ Early Deterioration Detection** | AI-powered NEWS2/SOFA scoring with real-time patient monitoring |
+| **💊 Medication Safety Engine** | Context-aware drug interaction detection with severity grading |
+| **🤖 Agent Orchestrator** | Visual multi-agent pipeline with step-by-step execution |
+| **🔐 Microsoft Entra ID** | Enterprise-grade authentication with multi-tenant isolation |
+| **📊 Azure SQL Database** | Persistent cloud storage with hospital-level data isolation |
+| **🚀 Production Deployment** | GitHub Actions CI/CD with Azure App Service |
 
 ---
 
-## ✨ Key Features
+## 🌟 Overview
 
-### 🤖 5-Agent Clinical Intelligence Pipeline
+**HealthMesh** is an enterprise-grade, multi-tenant clinical decision support platform designed to assist healthcare professionals in making informed decisions for complex patient cases. The platform leverages **Microsoft Azure AI Services** to provide real-time clinical insights, evidence-based recommendations, and transparent AI reasoning.
 
-| Agent | Role | Output |
-|-------|------|--------|
-| **🚨 Triage Agent** | NEWS2/SOFA-lite scoring, risk classification | Urgency score, risk category, red flags |
-| **🩺 Diagnostic Agent** | Differential diagnosis generation | Ranked diagnoses with supporting/contradictory findings |
-| **📋 Guideline Agent** | Medical guideline mapping (NCCN, WHO, ICMR, ADA, ACC/AHA, IDSA) | Recommendations, evidence levels, deviations |
-| **💊 Medication Safety Agent** | Drug interactions, contraindications, allergy cross-reactivity | Critical alerts, safer alternatives, monitoring |
-| **📚 Evidence Agent** | RAG-powered clinical research retrieval | Key studies, evidence grading, limitations |
-| **🧠 Synthesis Orchestrator** | Integration of all agent outputs | Unified recommendations with explainability panel |
+### Architecture Highlights
 
-### 🔐 Enterprise Security & Multi-Tenancy
+- **Azure OpenAI**: GPT-4o powered clinical intelligence with rule-based fallback
+- **Multi-Tenant Isolation**: Complete data separation per hospital/organization
+- **HIPAA-Ready**: Comprehensive audit logging and encryption
+- **FHIR R4 Compatible**: Standard healthcare data interoperability
 
-- **Microsoft Entra ID (Azure AD)** authentication
-- **Hospital-level data isolation** - Complete tenant separation
-- **Role-Based Access Control (RBAC)** - Doctor, Nurse, Admin roles
-- **Automatic user provisioning** from Azure AD claims
-- **Zero local passwords** - All auth through Microsoft identity
+---
 
-### 📊 Clinical Scoring Algorithms
+## ✨ Complete Feature List
 
-- **NEWS2** (National Early Warning Score 2) - Acute deterioration detection
-- **SOFA-lite** (Sequential Organ Failure Assessment) - Organ dysfunction assessment
-- **Risk Classification** - Low / Moderate / High / Critical
+### 🤖 Multi-Agent Clinical Intelligence Pipeline (6 Agents)
 
-### 🔍 Transparent & Explainable AI
+| Agent | Role | Key Outputs |
+|-------|------|-------------|
+| **🚨 Triage Agent** | NEWS2/SOFA scoring, risk classification | Urgency score, risk category, red flags |
+| **🩺 Diagnostic Agent** | Differential diagnosis generation | Ranked diagnoses with probability scores |
+| **📋 Guideline Agent** | Medical guideline mapping (NCCN, WHO, ICMR, ADA) | Evidence-based recommendations |
+| **💊 Medication Safety Agent** | Drug interactions, dosing, allergies | Severity-graded alerts with clinical context |
+| **📚 Evidence Agent** | RAG-powered clinical research retrieval | PubMed/guideline citations |
+| **🧠 Synthesis Orchestrator** | Multi-agent output integration | Unified clinical summary |
 
-- Step-by-step reasoning chains
-- Confidence scores per agent and overall
-- Missing data identification
-- Clinical disclaimers
-- Evidence citations with grading
+### 💊 Medication Safety Engine (NEW in v2.0)
+
+| Feature | Description |
+|---------|-------------|
+| **Drug-Drug Interactions** | 15+ interaction rules with clinical mechanisms |
+| **Context-Aware Severity** | Age, renal function modify alert severity |
+| **Allergy Cross-Reactivity** | Detects related drug class allergies |
+| **Renal/Hepatic Dosing** | Flags medications needing adjustment |
+| **Explainability Panel** | Data sources, reasoning chain, limitations |
+| **Alert Fatigue Prevention** | Suppressible low-priority alerts |
+
+**Detected Interactions Include:**
+- Aspirin + ACE Inhibitors → Reduced cardioprotection
+- Metformin + Sulfonylureas → Hypoglycemia risk
+- Statins + Amlodipine → Myopathy risk
+- NSAIDs + Anticoagulants → Bleeding risk
+- And many more...
+
+### ⚡ Early Deterioration Detection (NEW in v2.0)
+
+| Feature | Description |
+|---------|-------------|
+| **NEWS2 Scoring** | National Early Warning Score 2 calculation |
+| **SOFA-lite Assessment** | Organ dysfunction evaluation |
+| **AI Enhancement** | Azure OpenAI-powered trend analysis |
+| **Real-Time Signals** | Vital sign deterioration tracking |
+| **Clinical Recommendations** | Actionable intervention suggestions |
+| **Risk Trajectory** | Predictive deterioration modeling |
+
+### 🎭 Agent Orchestrator (Visual Pipeline)
+
+- **Step-by-Step Execution**: Watch each agent process in real-time
+- **Dependency Resolution**: Automatic agent sequencing
+- **Parallel Execution**: Independent agents run simultaneously
+- **Output Visualization**: Expandable results per agent
+- **Error Handling**: Graceful fallbacks on agent failure
 
 ### 📱 Patient QR Identity System
 
-- **FHIR R4 compliant** Patient Master ID
-- **Unique QR codes** for instant patient identification
-- **Longitudinal patient dashboard** on scan
-- **Cross-platform compatibility** with role-based access
+- **FHIR R4 Compliant** Patient Master ID
+- **Unique QR Codes** for instant patient identification
+- **Mobile Scanning** with role-based access control
+- **Longitudinal Dashboard** on scan
+
+### 🔐 Enterprise Security & Multi-Tenancy
+
+| Feature | Implementation |
+|---------|----------------|
+| **Authentication** | Microsoft Entra ID (Azure AD) only |
+| **Data Isolation** | Hospital-level tenant separation |
+| **Access Control** | Role-Based (Doctor, Nurse, Admin) |
+| **Audit Logging** | Full action trail with timestamps |
+| **Zero Passwords** | No local credential storage |
+
+### 📊 Clinical Scoring Algorithms
+
+- **NEWS2** (National Early Warning Score 2)
+- **SOFA-lite** (Sequential Organ Failure Assessment)
+- **Risk Classification**: Low / Moderate / High / Critical
+
+### 🔍 Explainable AI
+
+- Step-by-step reasoning chains
+- Confidence scores per agent
+- Data source citations
+- Known limitations disclosure
+- Clinical disclaimers
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              HEALTHMESH PLATFORM                            │
+│                         HEALTHMESH v2.0 PLATFORM                            │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────┐ │
 │  │     FRONTEND        │    │      BACKEND        │    │   AZURE AI      │ │
-│  │                     │    │                     │    │                 │ │
-│  │  • React 18         │    │  • Express.js       │    │  • Azure OpenAI │ │
-│  │  • TypeScript       │◄──►│  • TypeScript       │◄──►│  • GPT-4o       │ │
-│  │  • Tailwind CSS     │    │  • Node.js 20       │    │  • Azure AI     │ │
-│  │  • Radix UI         │    │  • RESTful APIs     │    │    Foundry      │ │
-│  │  • Framer Motion    │    │  • WebSocket        │    │                 │ │
+│  │                     │    │                     │    │   SERVICES      │ │
+│  │  • React 18 + TS    │    │  • Express.js       │    │                 │ │
+│  │  • Tailwind CSS     │◄──►│  • TypeScript       │◄──►│ 🔵 Azure OpenAI │ │
+│  │  • Radix UI         │    │  • Node.js 20       │    │    (GPT-4o)     │ │
+│  │  • TanStack Query   │    │  • RESTful APIs     │    │ 📋 Rule Fallback│ │
+│  │  • Wouter Router    │    │  • Multi-Agent      │    │                 │ │
 │  └─────────────────────┘    └─────────────────────┘    └─────────────────┘ │
 │                                       │                                     │
 │  ┌────────────────────────────────────┴────────────────────────────────┐   │
 │  │                        AZURE SERVICES LAYER                          │   │
 │  │                                                                      │   │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────┐ │   │
-│  │  │ Azure SQL    │  │ Azure Health │  │ Azure        │  │ Azure    │ │   │
-│  │  │ Database     │  │ Data Services│  │ Cognitive    │  │ Document │ │   │
-│  │  │              │  │ (FHIR R4)    │  │ Search       │  │ Intel    │ │   │
-│  │  │ Multi-tenant │  │              │  │              │  │          │ │   │
-│  │  │ Data Store   │  │ HL7 FHIR API │  │ RAG Index    │  │ Lab OCR  │ │   │
+│  │  │ Azure SQL    │  │ Microsoft    │  │ Azure        │  │ Azure    │ │   │
+│  │  │ Database     │  │ Entra ID     │  │ App Service  │  │ Monitor  │ │   │
+│  │  │              │  │              │  │              │  │          │ │   │
+│  │  │ Multi-tenant │  │ Enterprise   │  │ Production   │  │ Logging  │ │   │
+│  │  │ Persistence  │  │ Auth/SSO     │  │ Hosting      │  │ & Audit  │ │   │
 │  │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────┘ │   │
 │  │                                                                      │   │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────┐ │   │
-│  │  │ Microsoft    │  │ Azure        │  │ Azure        │  │ Azure    │ │   │
-│  │  │ Entra ID     │  │ Key Vault    │  │ App Service  │  │ Monitor  │ │   │
-│  │  │              │  │              │  │              │  │          │ │   │
-│  │  │ Identity &   │  │ Secrets Mgmt │  │ Web Hosting  │  │ Logging  │ │   │
-│  │  │ Access       │  │              │  │              │  │ & Audit  │ │   │
+│  │  │ Azure OpenAI │  │ Azure Health │  │ Azure        │  │ Azure    │ │   │
+│  │  │ (GPT-4o)     │  │ Data Services│  │ Cognitive    │  │ Document │ │   │
+│  │  │              │  │ (FHIR R4)    │  │ Search       │  │ Intel    │ │   │
+│  │  │ AI Engine    │  │ HL7 FHIR API │  │ RAG Index    │  │ Lab OCR  │ │   │
 │  │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────┘ │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
@@ -115,78 +182,117 @@ The system implements a **5-Agent Clinical Intelligence Pipeline** that works co
 ## 🛠️ Technology Stack
 
 ### Frontend
-| Technology | Purpose |
-|------------|---------|
-| React 18 | UI Framework |
-| TypeScript | Type Safety |
-| Tailwind CSS | Styling |
-| Radix UI | Accessible Components |
-| Framer Motion | Animations |
-| TanStack Query | Data Fetching |
-| Wouter | Routing |
-| Recharts | Data Visualization |
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| React | 18.x | UI Framework |
+| TypeScript | 5.x | Type Safety |
+| Tailwind CSS | 3.x | Styling |
+| Radix UI | Latest | Accessible Components |
+| TanStack Query | 5.x | Data Fetching & Caching |
+| Wouter | 3.x | Client-side Routing |
+| Recharts | 2.x | Data Visualization |
+| Framer Motion | 11.x | Animations |
 
 ### Backend
-| Technology | Purpose |
-|------------|---------|
-| Express.js | Web Framework |
-| TypeScript | Type Safety |
-| Node.js 20 | Runtime |
-| Drizzle ORM | Database ORM |
-| Zod | Schema Validation |
-| WebSocket | Real-time Communication |
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Express.js | 4.x | Web Framework |
+| TypeScript | 5.x | Type Safety |
+| Node.js | 20.x | Runtime |
+| mssql | 11.x | Azure SQL Client |
+| Zod | 3.x | Schema Validation |
+| MSAL Node | 2.x | Azure AD Authentication |
 
 ### Azure Services
 | Service | Purpose |
 |---------|---------|
 | **Azure OpenAI (GPT-4o)** | Clinical reasoning & analysis |
-| **Azure AI Foundry** | Model orchestration & deployment |
-| **Azure Health Data Services** | FHIR R4 compliant patient data |
 | **Azure SQL Database** | Multi-tenant data persistence |
-| **Azure Cognitive Search** | Medical guidelines RAG |
-| **Azure Document Intelligence** | Lab report OCR extraction |
 | **Microsoft Entra ID** | Enterprise authentication |
+| **Azure App Service** | Production web hosting |
+| **Azure Monitor** | Logging & telemetry |
+| **Azure Health Data Services** | FHIR R4 (optional) |
+| **Azure Document Intelligence** | Lab report OCR |
+| **Azure Cognitive Search** | Medical guidelines RAG |
 | **Azure Key Vault** | Secrets management |
-| **Azure App Service** | Web application hosting |
-| **Azure Monitor** | Logging, metrics, & audit trails |
 | **Azure Application Insights** | Performance monitoring |
-| **Azure Blob Storage** | Document & file storage |
-
-### Infrastructure
-| Technology | Purpose |
-|------------|---------|
-| Bicep | Infrastructure as Code |
-| GitHub Actions | CI/CD Pipeline |
-| Azure CLI | Deployment automation |
 
 ---
 
-## 📋 Prerequisites
+## 📁 Project Structure
 
-- **Node.js** 20+ ([Download](https://nodejs.org/))
-- **Azure Subscription** ([Create free account](https://azure.microsoft.com/free/))
-- **Azure CLI** ([Install](https://docs.microsoft.com/cli/azure/install-azure-cli))
-
-### Required Azure Services
-
-| Service | Configuration |
-|---------|---------------|
-| Microsoft Entra ID | App Registration with redirect URIs |
-| Azure OpenAI | GPT-4o deployment |
-| Azure SQL Database | Standard tier or higher |
-| Azure Health Data Services | FHIR R4 workspace (optional) |
-| Azure Cognitive Search | Basic tier or higher |
-| Azure Document Intelligence | S0 tier |
+```
+healthmesh/
+├── client/                          # Frontend React Application
+│   ├── src/
+│   │   ├── pages/                   # Route Pages
+│   │   │   ├── dashboard.tsx        # Main dashboard
+│   │   │   ├── patients.tsx         # Patient management
+│   │   │   ├── cases.tsx            # Clinical cases
+│   │   │   ├── orchestrator.tsx     # Agent Orchestrator (NEW)
+│   │   │   ├── early-deterioration.tsx  # NEWS2/SOFA (NEW)
+│   │   │   ├── medication-safety.tsx    # Drug safety (NEW)
+│   │   │   ├── labs.tsx             # Lab reports
+│   │   │   ├── qr-scan.tsx          # QR scanner
+│   │   │   ├── audit.tsx            # Audit logs
+│   │   │   └── settings.tsx         # User settings
+│   │   ├── components/              # Reusable UI Components
+│   │   ├── auth/                    # MSAL Authentication
+│   │   └── lib/                     # Utilities
+│   └── index.html
+│
+├── server/                          # Backend Express Server
+│   ├── agents/                      # AI Agent Engines (NEW)
+│   │   ├── ai-medication-safety-agent.ts   # AI medication safety
+│   │   ├── medication-safety-engine.ts     # Rule-based drug interactions
+│   │   ├── early-deterioration-agent.ts    # NEWS2/SOFA scoring
+│   │   └── ai-enhanced-deterioration-agent.ts  # AI deterioration
+│   ├── azure/                       # Azure Service Clients
+│   │   ├── openai-client.ts         # Azure OpenAI
+│   │   ├── monitoring.ts            # Azure Monitor
+│   │   └── config.ts                # Configuration
+│   ├── auth/                        # Authentication
+│   │   └── entraAuth.ts             # Microsoft Entra ID
+│   ├── api/                         # API Route Modules
+│   │   ├── medication-safety-routes.ts  # Medication safety API
+│   │   └── deterioration-routes.ts      # Deterioration API
+│   ├── db/                          # Database Layer
+│   │   ├── azure-sql.ts             # Azure SQL connection
+│   │   └── migrations/              # SQL migrations
+│   ├── clinical-agents.ts           # Core clinical pipeline
+│   ├── api-routes.ts                # Main API routes
+│   └── index.ts                     # Server entry point
+│
+├── shared/                          # Shared TypeScript Types
+│   └── schema.ts                    # Zod Schemas
+│
+├── docs/                            # Documentation
+│   ├── EARLY_DETERIORATION_AGENT.md
+│   ├── AGENT_PROMPTS.md
+│   └── ...
+│
+├── .github/workflows/               # CI/CD Pipelines
+│   └── deploy-production.yml
+│
+└── infra/                           # Azure Infrastructure (Bicep)
+    └── main.bicep
+```
 
 ---
 
 ## 🚀 Quick Start
 
+### Prerequisites
+
+- **Node.js** 20+ ([Download](https://nodejs.org/))
+- **Azure Subscription** ([Create free account](https://azure.microsoft.com/free/))
+- **Azure CLI** ([Install](https://docs.microsoft.com/cli/azure/install-azure-cli))
+
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/healthmesh.git
-cd healthmesh
+git clone https://github.com/balaraj74/HealthMesh.git
+cd HealthMesh
 ```
 
 ### 2. Install Dependencies
@@ -197,8 +303,6 @@ npm install
 
 ### 3. Configure Environment
 
-Copy the example environment file and configure your Azure services:
-
 ```bash
 cp .env.azure.example .env
 ```
@@ -206,33 +310,26 @@ cp .env.azure.example .env
 Edit `.env` with your Azure credentials:
 
 ```env
-# Azure Authentication
+# ===== Azure OpenAI =====
+AZURE_OPENAI_ENDPOINT=https://your-openai.openai.azure.com/
+AZURE_OPENAI_API_KEY=your-api-key
+AZURE_OPENAI_DEPLOYMENT=gpt-4o
+
+# ===== Azure Authentication =====
 AZURE_AD_TENANT_ID=your-tenant-id
 AZURE_AD_CLIENT_ID=your-client-id
 VITE_AZURE_AD_TENANT_ID=your-tenant-id
 VITE_AZURE_AD_CLIENT_ID=your-client-id
 
-# Azure OpenAI
-AZURE_OPENAI_ENDPOINT=https://your-openai.openai.azure.com/
-AZURE_OPENAI_API_KEY=your-api-key
-AZURE_OPENAI_DEPLOYMENT=gpt-4o
+# ===== Azure SQL Database =====
+AZURE_SQL_CONNECTION_STRING=Server=your-server.database.windows.net;Database=healthmesh;User Id=admin;Password=password;Encrypt=true
 
-# Azure SQL Database
-DATABASE_URL=your-azure-sql-connection-string
-
-# Azure Health Data Services (Optional)
+# ===== Optional Services =====
 AZURE_FHIR_ENDPOINT=https://your-fhir.fhir.azurehealthcareapis.com
-
-# Azure Document Intelligence
 AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT=https://your-docint.cognitiveservices.azure.com/
 AZURE_DOCUMENT_INTELLIGENCE_KEY=your-key
-
-# Azure Cognitive Search
 AZURE_SEARCH_ENDPOINT=https://your-search.search.windows.net
 AZURE_SEARCH_ADMIN_KEY=your-key
-
-# Azure Monitor
-APPLICATIONINSIGHTS_CONNECTION_STRING=your-connection-string
 ```
 
 ### 4. Start Development Server
@@ -241,176 +338,65 @@ APPLICATIONINSIGHTS_CONNECTION_STRING=your-connection-string
 npm run dev
 ```
 
-The application will be available at **http://localhost:3000**
+Application available at **http://localhost:5000**
 
 ### 5. Sign In
 
-1. Open http://localhost:3000
+1. Open http://localhost:5000
 2. Click **"Sign In with Microsoft"**
-3. Enter your Microsoft credentials
-4. Grant consent for permissions
-
----
-
-## 📁 Project Structure
-
-```
-healthmesh/
-├── client/                      # Frontend React Application
-│   ├── src/
-│   │   ├── components/          # Reusable UI Components
-│   │   │   ├── ui/              # Base UI components (Radix)
-│   │   │   ├── clinical-synthesis.tsx
-│   │   │   ├── qr-scanner.tsx
-│   │   │   └── ...
-│   │   ├── pages/               # Route Pages
-│   │   │   ├── dashboard.tsx
-│   │   │   ├── patients.tsx
-│   │   │   ├── cases.tsx
-│   │   │   ├── orchestrator.tsx
-│   │   │   ├── risk-safety.tsx
-│   │   │   └── ...
-│   │   ├── hooks/               # Custom React Hooks
-│   │   ├── lib/                 # Utilities & Helpers
-│   │   └── App.tsx              # Main Application
-│   └── index.html
-│
-├── server/                      # Backend Express Server
-│   ├── azure/                   # Azure Service Clients
-│   │   ├── config.ts            # Configuration Management
-│   │   ├── openai-client.ts     # Azure OpenAI Integration
-│   │   ├── fhir-client.ts       # FHIR R4 API Client
-│   │   ├── document-intelligence.ts
-│   │   ├── cognitive-search.ts
-│   │   └── monitoring.ts
-│   ├── auth/                    # Authentication
-│   │   └── entraAuth.ts         # Microsoft Entra ID Middleware
-│   ├── services/                # Business Logic Services
-│   │   ├── qr-identity.service.ts
-│   │   └── ...
-│   ├── db/                      # Database Layer
-│   │   ├── schema.ts            # Drizzle Schema
-│   │   └── migrations/          # SQL Migrations
-│   ├── clinical-agents.ts       # 5-Agent Clinical Pipeline
-│   ├── azure-agents.ts          # Azure AI Agents
-│   ├── api-routes.ts            # REST API Endpoints
-│   └── index.ts                 # Server Entry Point
-│
-├── shared/                      # Shared TypeScript Types
-│   └── schema.ts                # Zod Schemas
-│
-├── infra/                       # Azure Infrastructure
-│   ├── main.bicep               # Bicep IaC Template
-│   └── modules/                 # Bicep Modules
-│
-├── .github/
-│   └── workflows/               # GitHub Actions CI/CD
-│       └── deploy-production.yml
-│
-└── scripts/                     # Utility Scripts
-    └── deploy-azure.sh
-```
+3. Authenticate with your Azure AD credentials
 
 ---
 
 ## 📡 API Reference
 
 ### Authentication
-All API endpoints require a valid Microsoft Entra ID Bearer token.
+All endpoints require Microsoft Entra ID Bearer token:
 
 ```http
 Authorization: Bearer <entra-access-token>
 ```
 
-### User Profile
-```http
-GET /api/me
-```
-Returns the authenticated user's profile and hospital context.
-
-### Patients
+### Core Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/patients` | List all patients (hospital-scoped) |
-| `GET` | `/api/patients/:id` | Get patient by ID |
+| `GET` | `/api/me` | Get authenticated user profile |
+| `GET` | `/api/patients` | List patients (hospital-scoped) |
 | `POST` | `/api/patients` | Create new patient |
-| `PUT` | `/api/patients/:id` | Update patient |
-| `DELETE` | `/api/patients/:id` | Delete patient |
+| `GET` | `/api/cases` | List clinical cases |
+| `POST` | `/api/cases/:id/clinical-analyze` | Run 6-agent analysis |
 
-### Clinical Cases
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/cases` | List all cases (hospital-scoped) |
-| `GET` | `/api/cases/:id` | Get case by ID |
-| `POST` | `/api/cases` | Create new case |
-| `PUT` | `/api/cases/:id` | Update case |
-| `POST` | `/api/cases/:id/analyze` | Run basic AI analysis |
-| `POST` | `/api/cases/:id/clinical-analyze` | Run 5-agent clinical pipeline |
-
-### Clinical Analysis Request
-
-```http
-POST /api/cases/:id/clinical-analyze
-Content-Type: application/json
-
-{
-  "vitals": {
-    "respiratoryRate": 18,
-    "oxygenSaturation": 96,
-    "supplementalOxygen": false,
-    "systolicBP": 125,
-    "heartRate": 78,
-    "consciousness": "alert",
-    "temperature": 37.2
-  },
-  "labValues": {
-    "creatinine": 1.1,
-    "bilirubin": 0.8,
-    "platelets": 250,
-    "gcs": 15
-  }
-}
-```
-
-### Lab Reports
+### Medication Safety API (NEW)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/cases/:id/lab-reports` | Get lab reports for case |
-| `POST` | `/api/cases/:id/lab-reports` | Upload lab report (PDF/Image) |
+| `POST` | `/api/medication-safety/analyze-real` | AI-powered safety analysis |
+| `POST` | `/api/medication-safety/check-new` | Check new medication |
+| `POST` | `/api/medication-safety/alert/:id/acknowledge` | Acknowledge alert |
+| `GET` | `/api/medication-safety/patient/:id/history` | Alert history |
 
-### Clinical Chat
+### Early Deterioration API (NEW)
 
-```http
-POST /api/cases/:id/chat
-Content-Type: application/json
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/deterioration/analyze` | Basic NEWS2/SOFA |
+| `POST` | `/api/deterioration/analyze-real` | AI-enhanced analysis |
+| `GET` | `/api/deterioration/patient/:id/alerts` | Patient alerts |
 
-{
-  "message": "What are the next recommended tests?"
-}
-```
+### Lab Reports API
 
-### QR Identity
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/lab-reports/patient/:id` | Get patient lab reports |
+| `POST` | `/api/lab-reports/upload` | Upload lab report (OCR) |
+
+### QR Identity API
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/api/qr/patient/:id` | Get patient QR code |
-| `POST` | `/api/qr/scan` | Scan QR and retrieve patient data |
-
-### Audit Logs
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/audit` | Get all audit logs |
-| `GET` | `/api/audit/:entityType/:entityId` | Get entity audit trail |
-
-### Dashboard Statistics
-
-```http
-GET /api/dashboard/stats
-```
+| `POST` | `/api/qr/scan` | Scan QR and retrieve patient |
 
 ---
 
@@ -419,66 +405,64 @@ GET /api/dashboard/stats
 ### Authentication Flow
 
 ```
-User → Microsoft Entra ID → JWT Token → HealthMesh Backend → Validated Context
+User → Microsoft Entra ID → JWT Token → Backend Validation → Hospital Context
 ```
-
-### Data Isolation
-
-- **Tenant ID** extracted from verified JWT claims
-- **Hospital ID** auto-provisioned per Azure AD tenant
-- **All queries** filtered by `hospital_id` - zero cross-tenant data access
 
 ### Compliance Features
 
-| Feature | Implementation |
-|---------|----------------|
-| **HIPAA Ready** | Audit logging, data encryption, access controls |
-| **FHIR R4 Compliant** | Azure Health Data Services integration |
-| **SOC 2 Ready** | Azure security controls, monitoring |
+| Standard | Implementation |
+|----------|----------------|
+| **HIPAA Ready** | Audit logging, encryption, access controls |
+| **FHIR R4** | Azure Health Data Services integration |
+| **SOC 2 Ready** | Azure security controls |
 | **GDPR Compliant** | Data isolation, consent management |
 
 ### Security Controls
 
 - ✅ HTTPS-only with TLS 1.2+
 - ✅ Role-Based Access Control (RBAC)
-- ✅ Managed Identities for Azure service auth
-- ✅ Azure Key Vault for secrets management
+- ✅ Hospital-level data isolation
 - ✅ Full audit trail logging
 - ✅ No local password storage
+- ✅ Managed identities for Azure services
+- ✅ Azure Key Vault for secrets
 
 ---
 
-## 🚢 Deployment
+## 🚢 Production Deployment
 
-### Azure App Service Deployment
+### GitHub Actions CI/CD
+
+The repository includes automated deployment:
+
+```yaml
+# .github/workflows/deploy-production.yml
+# Triggers on push to main branch
+# Deploys to Azure App Service
+```
+
+### Manual Deployment
 
 ```bash
-# Set deployment configuration
-export RESOURCE_GROUP="healthmesh-rg"
-export LOCATION="eastus2"
-export ENVIRONMENT="production"
-
-# Deploy infrastructure
-az deployment group create \
-  --resource-group $RESOURCE_GROUP \
-  --template-file infra/main.bicep \
-  --parameters environment=$ENVIRONMENT
-
-# Build and deploy application
+# Build application
 npm run build
+
+# Deploy to Azure App Service
 az webapp deployment source config-zip \
-  --resource-group $RESOURCE_GROUP \
+  --resource-group healthmesh-rg \
   --name healthmesh-app \
   --src deploy.zip
 ```
 
-### GitHub Actions CI/CD
+### Azure Infrastructure (Bicep)
 
-The repository includes GitHub Actions workflows for automated deployment:
-
-- **`.github/workflows/deploy-production.yml`** - Production deployment pipeline
-- Automatic builds on push to `main` branch
-- Azure App Service deployment with slot swapping
+```bash
+# Deploy infrastructure
+az deployment group create \
+  --resource-group healthmesh-rg \
+  --template-file infra/main.bicep \
+  --parameters environment=production
+```
 
 ---
 
@@ -486,32 +470,31 @@ The repository includes GitHub Actions workflows for automated deployment:
 
 ### Azure Monitor Integration
 
-- **Application Insights** - Performance metrics, distributed tracing
-- **Log Analytics** - Centralized logging, query workbooks
-- **Azure Monitor Alerts** - Proactive issue detection
+- **Application Insights**: Performance metrics, distributed tracing
+- **Log Analytics**: Centralized logging
+- **Azure Alerts**: Proactive issue detection
 
 ### Tracked Metrics
 
 | Metric | Description |
 |--------|-------------|
-| Agent Execution Time | Performance of each clinical agent |
-| Confidence Scores | AI recommendation confidence levels |
-| Error Rates | Agent and API failure rates |
-| Risk Alert Generation | Critical clinical alerts created |
-| Audit Events | User actions and data access |
+| Agent Execution Time | Per-agent performance |
+| AI Token Usage | Azure OpenAI consumption |
+| Confidence Scores | Analysis reliability |
+| Alert Generation | Safety alerts created |
+| API Response Times | Endpoint latency |
+| Error Rates | System health indicators |
 
 ---
 
-## 🧪 Scripts
+## 🧪 Available Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start development server with hot reload |
+| `npm run dev` | Start development server (port 5000) |
 | `npm run build` | Build for production |
 | `npm start` | Run production server |
 | `npm run check` | TypeScript type checking |
-| `npm run lint` | ESLint code quality check |
-| `npm run db:push` | Push database schema changes |
 
 ---
 
@@ -520,26 +503,33 @@ The repository includes GitHub Actions workflows for automated deployment:
 > **This system is designed as CLINICAL DECISION SUPPORT only.**
 >
 > - All recommendations must be reviewed by a licensed clinician
-> - The AI does NOT make diagnoses
+> - The AI does NOT make diagnoses or treatment decisions
 > - The final clinical decision rests with the treating physician
 > - Evidence and guidelines may change; always verify current standards
 > - Patient-specific factors may override general recommendations
 
 ---
 
-## 🏆 Microsoft Imagine Cup 2025
+## 🏆 Microsoft Imagine Cup 2026
 
-HealthMesh is proudly built for **Microsoft Imagine Cup 2025** in the **Healthcare** category.
+HealthMesh is built for **Microsoft Imagine Cup 2026** in the **Healthcare** category.
 
 ### Judging Criteria Alignment
 
-| Criteria | HealthMesh Implementation |
-|----------|---------------------------|
+| Criteria | Implementation |
+|----------|----------------|
 | **Technical Excellence** | Multi-agent AI architecture with Azure services |
-| **Impact** | Addresses clinical decision support challenges |
-| **Innovation** | 5-agent explainable AI pipeline |
-| **Azure Integration** | Deep integration with Azure AI & health services |
-| **Production Ready** | Complete with IaC, CI/CD, and monitoring |
+| **Innovation** | 6-agent explainable clinical AI pipeline |
+| **Impact** | Addresses medication safety and deterioration detection |
+| **Azure Integration** | Deep integration with 10+ Azure services |
+| **Production Ready** | Complete with CI/CD, monitoring, and multi-tenancy |
+
+### Key Differentiators
+
+- **Multi-Agent Architecture**: 6 specialized clinical AI agents
+- **Explainable AI**: Full transparency in reasoning
+- **Enterprise Ready**: Multi-tenant with hospital isolation
+- **Real Clinical Value**: NEWS2, SOFA, drug interaction detection
 
 ---
 
@@ -553,6 +543,12 @@ HealthMesh is proudly built for **Microsoft Imagine Cup 2025** in the **Healthca
 - 🐙 GitHub: [github.com/balaraj74](https://github.com/balaraj74)
 
 ---
+
+## 📜 License
+
+This project is proprietary software developed for Microsoft Imagine Cup 2026.
+All rights reserved © 2026 Balaraj R.
+
 ---
 
 ## 🙏 Acknowledgments
@@ -566,5 +562,11 @@ HealthMesh is proudly built for **Microsoft Imagine Cup 2025** in the **Healthca
 
 <p align="center">
   <strong>Made with ❤️ for better healthcare</strong><br/>
-  <em>Powered by Microsoft Azure</em>
+  <em>Powered by Microsoft Azure AI Services</em>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Build-Passing-success?style=flat-square" alt="Build" />
+  <img src="https://img.shields.io/badge/Coverage-85%25-yellow?style=flat-square" alt="Coverage" />
+  <img src="https://img.shields.io/badge/License-Proprietary-red?style=flat-square" alt="License" />
 </p>
