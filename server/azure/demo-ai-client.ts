@@ -56,7 +56,7 @@ export class DemoAIClient {
       response = this.generateResearchResponse(userPrompt);
     } else if (systemPrompt.includes('Risk & Safety Agent')) {
       response = this.generateRiskResponse(userPrompt);
-    } else if (systemPrompt.includes('Clinician Chat')) {
+    } else if (systemPrompt.includes('Clinician Chat') || systemPrompt.includes('Dr. HealthMesh') || systemPrompt.includes('clinical decision support')) {
       response = this.generateChatResponse(userPrompt);
     } else {
       response = this.generateGenericResponse(userPrompt);
@@ -674,19 +674,93 @@ export class DemoAIClient {
 
   private generateGenericResponse(query: string): string {
     // Try to detect context and provide relevant response
-    if (query.toLowerCase().includes('cancer') || query.toLowerCase().includes('oncolog')) {
-      return JSON.stringify({
-        analysis: "Oncology case requiring comprehensive review",
-        recommendations: ["Complete tumor board evaluation", "Review staging and molecular markers", "Assess treatment options"],
-        confidence: 75
-      });
+    const lowerQuery = query.toLowerCase();
+
+    if (lowerQuery.includes('cancer') || lowerQuery.includes('oncolog')) {
+      return `## Clinical Analysis
+
+Based on my review of the available patient data, I've identified the following key points:
+
+### Assessment
+The patient's oncology case requires comprehensive evaluation. I recommend a thorough tumor board review to assess all treatment options.
+
+### Key Findings
+- Active malignancy requiring staging and molecular marker review
+- Treatment planning should consider patient's overall health status
+- Comorbidities need to be factored into treatment decisions
+
+### Recommendations
+1. **Complete tumor board evaluation** - Multidisciplinary review recommended
+2. **Review staging and molecular markers** - Ensure complete diagnostic workup
+3. **Assess treatment options** - Consider surgery, radiation, systemic therapy as appropriate
+
+### Follow-up
+- Schedule follow-up to discuss treatment plan
+- Monitor for any changes in clinical status
+
+*Confidence: 75% - Additional patient data would improve analysis accuracy.*
+
+---
+*This is clinical decision support only. All recommendations must be reviewed by qualified healthcare professionals.*`;
     }
 
-    return JSON.stringify({
-      analysis: "Clinical analysis in progress. Based on the available patient data, I can provide insights on diagnosis, treatment options, and monitoring recommendations.",
-      recommendations: ["Review complete patient history", "Assess current medications", "Identify potential interactions"],
-      confidence: 70
-    });
+    if (lowerQuery.includes('about') || lowerQuery.includes('tell') || lowerQuery.includes('case') || lowerQuery.includes('patient')) {
+      return `## Case Summary
+
+I've reviewed the available case information and patient data.
+
+### Patient Overview
+Based on the clinical records, this patient requires ongoing monitoring and care management.
+
+### Current Status
+- Active clinical case under evaluation
+- Treatment plan should be individualized based on findings
+- Comorbidities and contraindications should be considered
+
+### Recommendations
+1. **Review complete patient history** - Ensure all relevant data is considered
+2. **Assess current medications** - Check for interactions and appropriateness
+3. **Identify potential risks** - Flag any safety concerns
+
+### Next Steps
+- Complete clinical assessment
+- Document findings and recommendations
+- Schedule appropriate follow-up
+
+*I'm ready to answer specific questions about this case. Please feel free to ask about diagnosis, treatment options, medications, or any other clinical concerns.*
+
+---
+*This is clinical decision support only. All recommendations must be reviewed by qualified healthcare professionals.*`;
+    }
+
+    return `## Clinical Response
+
+Thank you for your question. Based on the clinical context:
+
+### Analysis
+I've analyzed the available patient data and clinical information. To provide more specific guidance, please share:
+
+- **Specific clinical concerns** you'd like me to address
+- **Treatment questions** regarding medications or interventions
+- **Diagnostic questions** about differentials or testing
+
+### Available Support
+I can help with:
+- 📋 **Patient history review** - Summarizing key clinical data
+- 💊 **Medication analysis** - Drug interactions, dosing, safety
+- 📖 **Guideline recommendations** - Evidence-based treatment options
+- ⚠️ **Risk assessment** - Identifying safety concerns
+
+### How to Get Started
+Try asking me about:
+- "What are the treatment options for this patient?"
+- "Are there any drug interactions I should be aware of?"
+- "What do the guidelines recommend?"
+
+*I'm here to support your clinical decision-making. What would you like to explore?*
+
+---
+*This is clinical decision support only. All recommendations must be reviewed by qualified healthcare professionals.*`;
   }
 }
 

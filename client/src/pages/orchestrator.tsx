@@ -502,7 +502,15 @@ function ActiveCasesPanel({
   isAnalyzing: boolean;
   analyzingCaseId?: string;
 }) {
-  const pendingCases = cases.filter(c => c.status === "submitted" || c.status === "draft");
+  // Show cases that need analysis - anything not already analyzed or closed
+  // Cast to any to handle database statuses that may not match TypeScript types exactly  
+  const pendingCases = cases.filter(c => {
+    const status = (c as any).status;
+    return status !== "analyzing" &&
+      status !== "review-ready" &&
+      status !== "reviewed" &&
+      status !== "closed";
+  });
   const analyzingCases = cases.filter(c => c.status === "analyzing");
   const readyCases = cases.filter(c => c.status === "review-ready");
 

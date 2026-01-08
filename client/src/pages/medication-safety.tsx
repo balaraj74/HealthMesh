@@ -556,10 +556,6 @@ export default function MedicationSafety() {
                                         <Clock className="h-3 w-3 mr-1" />
                                         {new Date(result.timestamp).toLocaleTimeString()}
                                     </Badge>
-                                    <Badge variant={result.aiModel?.includes("gemini") ? "default" : "secondary"} className="gap-1">
-                                        <Brain className="h-3 w-3" />
-                                        {result.aiModel?.replace("-preview-05-20", "") || "AI Model"}
-                                    </Badge>
                                 </div>
                             </CardHeader>
                             <CardContent>

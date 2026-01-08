@@ -127,26 +127,20 @@ export default function Chat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const { data: cases = [], isLoading: casesLoading, error: casesError } = useQuery<ClinicalCase[]>({
+  const { data: casesData, isLoading: casesLoading, error: casesError } = useQuery<{ success: boolean; data: ClinicalCase[] }>({
     queryKey: ["/api/cases"],
-    queryFn: async (): Promise<ClinicalCase[]> => {
-      const response = await fetch("/api/cases", { credentials: "include" });
-      const data: { success: boolean; data: ClinicalCase[] } = await response.json();
-      return Array.isArray(data.data) ? data.data : [];
-    },
     refetchInterval: 15000, // Refresh every 15 seconds
   });
 
-  const { data: messages = [], isLoading: messagesLoading, error: messagesError } = useQuery<ChatMessage[]>({
+  const cases = casesData?.data ?? [];
+
+  const { data: messagesData, isLoading: messagesLoading, error: messagesError } = useQuery<{ success: boolean; data: ChatMessage[] }>({
     queryKey: ["/api/chat", selectedCaseId],
-    queryFn: async (): Promise<ChatMessage[]> => {
-      const response = await fetch(`/api/chat/${selectedCaseId}`, { credentials: "include" });
-      const data: { success: boolean; data: ChatMessage[] } = await response.json();
-      return Array.isArray(data.data) ? data.data : [];
-    },
     enabled: !!selectedCaseId,
     refetchInterval: 5000, // Refresh chat every 5 seconds for real-time
   });
+
+  const messages = messagesData?.data ?? [];
 
   const sendMutation = useMutation({
     mutationFn: async (content: string) => {
@@ -197,7 +191,7 @@ export default function Chat() {
 
   const casesList = Array.isArray(cases) ? cases : [];
   const activeCases = casesList.filter((c: any) =>
-    c.status === "analyzing" || c.status === "review-ready" || c.status === "submitted" || c.status === "draft"
+    c.status === "active" || c.status === "analyzing" || c.status === "review-ready" || c.status === "submitted" || c.status === "draft" || c.status === "pending"
   );
 
   return (

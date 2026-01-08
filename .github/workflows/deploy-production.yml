@@ -7,7 +7,7 @@ on:
   workflow_dispatch:  # Allows manual deployment from GitHub UI
 
 env:
-  AZURE_WEBAPP_NAME: healthmesh-app
+  AZURE_WEBAPP_NAME: healthmesh
   NODE_VERSION: '20.x'
 
 jobs:
@@ -34,9 +34,9 @@ jobs:
 
     - name: 🔨 Build application
       env:
-        VITE_AZURE_AD_CLIENT_ID: 5f575598-453d-4278-8e0f-a31fb9048256
-        VITE_AZURE_AD_TENANT_ID: common
-        VITE_AZURE_AD_REDIRECT_URI: https://healthmesh-app.azurewebsites.net/login
+        VITE_AZURE_AD_CLIENT_ID: 6116990b-c0d4-42fd-bb31-006498740273
+        VITE_AZURE_AD_TENANT_ID: e290fb02-d184-4a8c-ae49-c83b04485909
+        VITE_AZURE_AD_REDIRECT_URI: https://healthmesh.azurewebsites.net/login
         NODE_ENV: production
       run: npm run build
 
@@ -99,7 +99,7 @@ jobs:
     - name: 🚀 Deploy to Azure Web App
       run: |
         az webapp deployment source config-zip \
-          --resource-group healthmesh \
+          --resource-group HealthMesh \
           --name ${{ env.AZURE_WEBAPP_NAME }} \
           --src deploy.zip
 

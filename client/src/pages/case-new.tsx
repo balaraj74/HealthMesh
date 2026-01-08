@@ -469,19 +469,68 @@ export default function CaseNew() {
 
   const selectedPatient = patients?.find((p: APIPatient) => p.id === form.watch("patientId"));
 
+  // Upload lab reports for a case with actual file content
+  const uploadLabReports = async (caseId: string, patientId: string, files: File[]) => {
+    for (const file of files) {
+      try {
+        // Read file as base64 for text-based files or use FormData
+        const reader = new FileReader();
+
+        const fileContent = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => {
+            // Get base64 string (remove data:...base64, prefix)
+            const base64 = (reader.result as string).split(',')[1] || '';
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        // Create a lab report record with file content for extraction
+        const response = await apiRequest("POST", "/api/lab-reports/upload", {
+          patientId,
+          caseId,
+          fileName: file.name,
+          fileType: file.type,
+          fileContent, // Base64 encoded file content
+        });
+
+        const result = await response.json();
+        console.log(`Lab report processed: ${file.name}`, result);
+      } catch (error) {
+        console.error(`Failed to upload lab report ${file.name}:`, error);
+      }
+    }
+  };
+
   const createCaseMutation = useMutation({
     mutationFn: async (data: InsertCase) => {
       const response = await apiRequest("POST", "/api/cases", data);
       return response.json();
     },
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
+      const caseId = response?.data?.id || response?.id;
+      const patientId = form.getValues("patientId");
+
+      // Upload lab reports if any files were uploaded
+      if (uploadedFiles.length > 0 && caseId && patientId) {
+        toast({
+          title: "Uploading lab reports...",
+          description: `Uploading ${uploadedFiles.length} file(s)`,
+        });
+        await uploadLabReports(caseId, patientId, uploadedFiles);
+      }
+
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/labs"] });
+
       toast({
         title: "Case created",
-        description: "The case has been submitted for AI analysis.",
+        description: uploadedFiles.length > 0
+          ? `Case submitted with ${uploadedFiles.length} lab report(s).`
+          : "The case has been submitted for AI analysis.",
       });
-      // API returns { success: true, data: { id, ... } }
-      const caseId = response?.data?.id || response?.id;
+
       if (caseId) {
         navigate(`/cases/${caseId}`);
       } else {
