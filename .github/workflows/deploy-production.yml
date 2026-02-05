@@ -43,97 +43,66 @@ jobs:
     - name: 📁 Install production dependencies
       run: npm ci --production --ignore-scripts --legacy-peer-deps
 
-    - name: 📦 Prepare deployment package
+    - name: 📦 Create deployment ZIP
       run: |
-        echo "📦 Creating deployment package..."
+        echo "📦 Creating deployment ZIP..."
         
-        # Create deployment folder
-        mkdir -p deploy-package
+        # Create a simple ZIP with everything needed
+        zip -r deploy.zip dist node_modules shared package.json -q
         
-        # Copy only what's needed
-        cp -r dist deploy-package/
-        cp -r node_modules deploy-package/
-        
-        # Copy shared if exists
-        if [ -d "shared" ]; then
-          cp -r shared deploy-package/
-        fi
-        
-        # Create production package.json
-        cat > deploy-package/package.json << 'EOF'
-        {
-          "name": "healthmesh",
-          "version": "2.0.0",
-          "type": "module",
-          "main": "dist/index.js",
-          "scripts": {
-            "start": "node dist/index.js"
-          },
-          "engines": {
-            "node": "22.x",
-            "npm": ">=10.0.0"
-          }
-        }
-        EOF
-        
-        # Create web.config for Azure (optional but helps)
-        cat > deploy-package/web.config << 'EOF'
-        <?xml version="1.0" encoding="utf-8"?>
-        <configuration>
-          <system.webServer>
-            <handlers>
-              <add name="iisnode" path="dist/index.js" verb="*" modules="iisnode"/>
-            </handlers>
-            <rewrite>
-              <rules>
-                <rule name="NodeInspector" patternSyntax="ECMAScript" stopProcessing="true">
-                  <match url="^dist/index.js\/debug[\/]?" />
-                </rule>
-                <rule name="StaticContent">
-                  <action type="Rewrite" url="public{REQUEST_URI}"/>
-                </rule>
-                <rule name="DynamicContent">
-                  <conditions>
-                    <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
-                  </conditions>
-                  <action type="Rewrite" url="dist/index.js"/>
-                </rule>
-              </rules>
-            </rewrite>
-            <security>
-              <requestFiltering>
-                <hiddenSegments>
-                  <remove segment="bin"/>
-                </hiddenSegments>
-              </requestFiltering>
-            </security>
-            <httpErrors existingResponse="PassThrough" />
-          </system.webServer>
-        </configuration>
-        EOF
-        
-        echo "✅ Deployment package ready"
-        echo "📁 Package structure:"
-        ls -lh deploy-package/ | head -15
+        echo "✅ ZIP created: $(du -h deploy.zip | cut -f1)"
 
-    - name: 🚀 Deploy to Azure Web App
-      uses: azure/webapps-deploy@v2
+    - name: 🔐 Azure Login
+      uses: azure/login@v1
       with:
-        app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ./deploy-package
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: 🚀 Upload deployment package
+      run: |
+        # Get publishing credentials
+        echo "Getting deployment credentials..."
+        CREDS=$(az webapp deployment list-publishing-credentials \
+          --resource-group HealthMesh \
+          --name healthmesh \
+          --query "{username:publishingUserName,password:publishingPassword}" \
+          --output json)
+        
+        USERNAME=$(echo $CREDS | jq -r .username)
+        PASSWORD=$(echo $CREDS | jq -r .password)
+        
+        # Upload using Kudu REST API (most reliable method)
+        echo "Uploading deployment package..."
+        curl -X POST \
+          -u "$USERNAME:$PASSWORD" \
+          --data-binary @deploy.zip \
+          https://healthmesh.scm.azurewebsites.net/api/zipdeploy \
+          -H "Content-Type: application/zip" \
+          --fail \
+          --show-error \
+          --max-time 600
+
+    - name: ⏳ Wait for deployment
+      run: |
+        echo "Waiting for deployment to complete..."
+        sleep 20
+
+    - name: 🔄 Restart app
+      run: |
+        echo "Restarting application..."
+        az webapp restart \
+          --resource-group HealthMesh \
+          --name healthmesh
 
     - name: ✅ Deployment complete
       run: |
         echo "🎉 Deployment successful!"
-        echo "🌐 Application URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+        echo "🌐 Application URL: https://healthmesh.azurewebsites.net"
         echo "⏰ Deployed at: $(date)"
         
-        # Wait for app to start
-        echo "⏳ Waiting for app to start..."
+        echo "⏳ Waiting for app to be ready..."
         sleep 15
         
-        # Test if app is responding
         echo "🔍 Testing application..."
-        curl -I https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net || echo "App starting..."
+        curl -I https://healthmesh.azurewebsites.net || echo "App is starting (this is normal)"
+
 
