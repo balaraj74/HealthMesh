@@ -9,6 +9,15 @@ server/public/
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
 
 # IDE
 .vscode/
@@ -24,13 +33,33 @@ Thumbs.db
 logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
 # Testing
 coverage/
+.nyc_output/
+
+# Deployment
+*.zip
+*.tar.gz
+deploy-*.zip
+
+# Secrets and sensitive data
+*.pem
+*.key
+*.cert
+secrets/
+.secret
+
+# Cache
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.vuepress/dist
 
 # Misc
-*.tar.gz
-*.zip
-vite.config.ts.*server/scripts/fix-production.ts
-server/scripts/setup-production.cjs
 server/scripts/fix-production.ts
+server/scripts/setup-production.cjs

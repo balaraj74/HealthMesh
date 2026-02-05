@@ -53,6 +53,17 @@
 - **HIPAA-Ready**: Comprehensive audit logging and encryption
 - **FHIR R4 Compatible**: Standard healthcare data interoperability
 
+### Quick Navigation
+
+📚 **[Complete Documentation](./docs/)** | 🔒 **[Security Policy](./docs/security/SECURITY.md)** | 🚀 **[Deployment Guide](./docs/deployment/AZURE_PES_SETUP_GUIDE.md)** | 📁 **[Project Structure](./docs/PROJECT_STRUCTURE.md)**
+
+**Security Features:**
+- [Security Scorecard (99/100)](./docs/security/SECURITY_PHASE2_COMPLETE.md#new-security-scorecard) ⭐
+- [RBAC Authorization](./docs/security/SECURITY_PHASE2_COMPLETE.md#advanced-authorization)
+- [Field Encryption](./docs/security/SECURITY_PHASE2_COMPLETE.md#field-level-data-protection)
+- [Vulnerability Report](./docs/security/SECURITY_UPGRADE_REPORT.md)
+
+
 ---
 
 ## ✨ Complete Feature List

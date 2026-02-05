@@ -3,6 +3,19 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { configureSecurity, sanitizeInput } from "./security";
+import { validateEnvironment } from "./env-validation";
+
+// ============================================================================
+// ENVIRONMENT VALIDATION - Check configuration before starting
+// ============================================================================
+const envValidation = validateEnvironment();
+if (!envValidation.valid) {
+  console.error("\n❌ CRITICAL: Environment validation failed!");
+  console.error("Cannot start server with invalid configuration.");
+  console.error("Please fix the errors listed above and restart.\n");
+  process.exit(1);
+}
 
 // ============================================================================
 // ENVIRONMENT VERIFICATION - Log Entra ID configuration at startup
@@ -28,6 +41,11 @@ declare module "http" {
   }
 }
 
+// ============================================================================
+// SECURITY MIDDLEWARE - Apply first for maximum protection
+// ============================================================================
+configureSecurity(app);
+
 app.use(
   express.json({
     verify: (req, _res, buf) => {
@@ -37,6 +55,9 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+
+// Input sanitization to prevent XSS and injection attacks
+sanitizeInput(app);
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
