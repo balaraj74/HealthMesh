@@ -90,22 +90,24 @@ export default function Login() {
     console.log("[Login] MSAL operation in progress:", inProgress);
     return (
       <AuthLayout>
-        <div className="w-full max-w-md">
-          <div className="text-center space-y-4">
+        <div className="w-full max-w-md animate-fade-in">
+          <div className="text-center space-y-6">
             <div className="relative">
-              <div className="absolute inset-0 bg-[#0078D4]/20 rounded-full blur-xl animate-pulse" />
-              <div className="relative bg-white dark:bg-slate-900 p-4 rounded-full shadow-lg mx-auto w-fit">
-                <Shield className="h-12 w-12 text-[#0078D4]" />
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse" />
+              <div className="relative bg-card/50 backdrop-blur-md p-6 rounded-full shadow-2xl mx-auto w-fit border border-white/10">
+                <Shield className="h-12 w-12 text-primary" />
               </div>
             </div>
-            <div className="space-y-2">
-              <Loader2 className="h-6 w-6 animate-spin text-[#0078D4] mx-auto" />
-              <p className="text-slate-600 dark:text-slate-400 font-medium">
-                Completing sign-in...
-              </p>
-              <p className="text-xs text-slate-500">
-                Processing Microsoft authentication
-              </p>
+            <div className="space-y-3">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+              <div className="space-y-1">
+                <p className="text-lg font-medium tracking-tight text-foreground">
+                  Authenticating securely...
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Verifying credentials with Microsoft Entra ID
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -183,43 +185,46 @@ export default function Login() {
 
   return (
     <AuthLayout>
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md animate-scale-in">
         {/* Logo and Title */}
-        <div className="text-center mb-8 space-y-2">
-          <div className="flex items-center justify-center mb-4">
-            <div className="relative">
-              <div className="absolute inset-0 bg-[#0078D4]/30 rounded-2xl blur-lg" />
-              <div className="relative bg-[#0078D4] p-3 rounded-2xl shadow-lg">
+        <div className="text-center mb-8 space-y-3">
+          <div className="flex items-center justify-center mb-6">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-primary/40 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500" />
+              <div className="relative bg-gradient-to-br from-primary to-blue-600 p-4 rounded-2xl shadow-xl border border-white/20">
                 <Activity className="h-10 w-10 text-white" />
               </div>
             </div>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-4xl font-bold tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70">
             HealthMesh
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            Intelligent Healthcare Management Platform
+          <p className="text-muted-foreground text-lg">
+            Intelligent Healthcare Management
           </p>
         </div>
 
         {/* Login Card */}
-        <Card className="shadow-xl border-slate-200 dark:border-slate-800">
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
-            <CardDescription>
-              Sign in with your organization's Microsoft account
+        <Card className="shadow-2xl border-white/10 bg-card/70 backdrop-blur-xl overflow-hidden relative group">
+          {/* Subtle sheen effect */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
+
+          <CardHeader className="space-y-1 text-center pb-8 pt-8">
+            <CardTitle className="text-2xl font-bold tracking-tight">Welcome Back</CardTitle>
+            <CardDescription className="text-base">
+              Secure access for authorized personnel
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 px-8 pb-8">
             {/* Error Alert */}
             {error && (
               <Alert
                 variant="destructive"
-                className="animate-in fade-in-50 duration-300"
+                className="animate-in fade-in-50 duration-300 border-destructive/50 bg-destructive/10"
               >
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription className="font-medium">{error}</AlertDescription>
               </Alert>
             )}
 
@@ -228,23 +233,24 @@ export default function Login() {
               <Button
                 onClick={handleMicrosoftLogin}
                 disabled={isLoading || inProgress !== "none"}
-                className="w-full bg-[#0078D4] hover:bg-[#106EBE] text-white font-medium py-6 transition-all duration-200 shadow-md hover:shadow-lg"
-                size="lg"
+                className="w-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium h-14 text-base transition-all duration-300 shadow-lg hover:shadow-primary/25 rounded-xl border border-white/10 relative overflow-hidden group/btn"
               >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000" />
+
                 {isLoading || inProgress !== "none" ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Signing in...
+                    <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                    Connecting...
                   </>
                 ) : (
                   <>
-                    <svg className="mr-2 h-5 w-5" viewBox="0 0 23 23" fill="none">
+                    <svg className="mr-3 h-5 w-5" viewBox="0 0 23 23" fill="none">
                       <path d="M11 0H0v11h11V0z" fill="#F25022" />
                       <path d="M23 0H12v11h11V0z" fill="#7FBA00" />
                       <path d="M11 12H0v11h11V12z" fill="#00A4EF" />
                       <path d="M23 12H12v11h11V12z" fill="#FFB900" />
                     </svg>
-                    Sign in with Microsoft
+                    Continue with Microsoft
                   </>
                 )}
               </Button>
@@ -253,46 +259,56 @@ export default function Login() {
               <button
                 onClick={handleMicrosoftLoginPopup}
                 disabled={isLoading || inProgress !== "none"}
-                className="w-full text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors py-2"
               >
-                Having trouble? Try popup sign-in
+                Having trouble? Try popup window
               </button>
             </div>
 
             {/* Enterprise Features */}
-            <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-              <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                <Building2 className="h-4 w-4 text-[#0078D4] flex-shrink-0" />
-                <span>Enterprise Single Sign-On (SSO)</span>
+            <div className="space-y-3 pt-6 border-t border-border/50">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground group/item hover:text-foreground transition-colors">
+                <div className="p-1.5 rounded-full bg-primary/10 text-primary">
+                  <Building2 className="h-3.5 w-3.5" />
+                </div>
+                <span>Enterprise Single Sign-On</span>
               </div>
-              <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                <Lock className="h-4 w-4 text-[#0078D4] flex-shrink-0" />
-                <span>Multi-Factor Authentication (MFA)</span>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground group/item hover:text-foreground transition-colors">
+                <div className="p-1.5 rounded-full bg-primary/10 text-primary">
+                  <Lock className="h-3.5 w-3.5" />
+                </div>
+                <span>Multi-Factor Authentication</span>
               </div>
-              <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                <CheckCircle2 className="h-4 w-4 text-[#0078D4] flex-shrink-0" />
-                <span>HIPAA-Compliant Authentication</span>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground group/item hover:text-foreground transition-colors">
+                <div className="p-1.5 rounded-full bg-primary/10 text-primary">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                </div>
+                <span>HIPAA-Compliant Security</span>
               </div>
             </div>
 
             {/* Security Notice */}
-            <div className="space-y-2 text-center pt-4 border-t border-slate-200 dark:border-slate-700">
-              <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-500">
-                <Shield className="h-4 w-4" />
-                <p className="text-xs font-semibold">Authorized Users Only</p>
+            <div className="space-y-3 text-center pt-6 border-t border-border/50">
+              <div className="flex items-center justify-center gap-2 text-amber-500/90 bg-amber-500/10 py-1.5 px-3 rounded-full w-fit mx-auto border border-amber-500/20">
+                <Shield className="h-3.5 w-3.5" />
+                <p className="text-[11px] font-semibold uppercase tracking-wider">Authorized Use Only</p>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                This system contains confidential patient health information
-                protected under HIPAA. Unauthorized access is prohibited.
+              <p className="text-[11px] text-muted-foreground/80 leading-relaxed max-w-[280px] mx-auto">
+                Confidential patient health information. <br />
+                Unauthorized access is traceable and prohibited.
               </p>
             </div>
           </CardContent>
         </Card>
 
         {/* Footer */}
-        <div className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
-          <p>Protected by Microsoft Entra ID</p>
-          <p className="text-[10px]">Enterprise-grade security & compliance</p>
+        <div className="mt-8 text-center space-y-2 animate-fade-in delay-100">
+          <p className="text-xs font-medium text-muted-foreground">Protected by Microsoft Entra ID</p>
+          <div className="flex justify-center gap-2">
+            <div className="h-1 w-1 rounded-full bg-primary/40" />
+            <div className="h-1 w-1 rounded-full bg-primary/40" />
+            <div className="h-1 w-1 rounded-full bg-primary/40" />
+          </div>
         </div>
       </div>
     </AuthLayout>
