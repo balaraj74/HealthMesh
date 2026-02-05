@@ -33,15 +33,60 @@ export class AzureSQLClient {
                 min: 0,
                 idleTimeoutMillis: 30000
             },
-            options: azureConfig.sql.options
+            options: {
+                ...azureConfig.sql.options,
+                encrypt: true,
+                trustServerCertificate: false,
+                connectionTimeout: 60000, // 60s timeout for cold starts
+                requestTimeout: 60000     // 60s request timeout
+            }
         };
+
+        // Trigger warm-up in background
+        this.warmUp().catch(err => console.error("⚠️ Background DB warm-up failed:", err.message));
+    }
+
+    private async warmUp() {
+        console.log("🔥 Triggering DB warm-up...");
+        try {
+            await this.getPool();
+            console.log("✅ DB Warm-up successful - Connection established");
+        } catch (error) {
+            console.warn("⚠️ DB Warm-up pending (will retry on next request)");
+        }
     }
 
     private async getPool(): Promise<sql.ConnectionPool> {
-        if (!this.pool) {
-            this.pool = await sql.connect(this.config);
+        if (this.pool && this.pool.connected) return this.pool;
+
+        // Implementation of retry logic for Serverless Cold Starts
+        let retries = 5;
+        let delay = 2000; // Start with 2s delay
+
+        while (retries > 0) {
+            try {
+                // If pool exists but not connected, close it first
+                if (this.pool) {
+                    try { await this.pool.close(); } catch (e) { /* ignore */ }
+                }
+
+                console.log(`🔌 Connecting to Azure SQL (Attempt ${6 - retries}/5)...`);
+                this.pool = await sql.connect(this.config);
+                console.log("✅ Connected to Azure SQL Database");
+                return this.pool;
+            } catch (err: any) {
+                retries--;
+                console.warn(`⚠️ DB Connection failed: ${err.message}. Retrying in ${delay}ms...`);
+
+                if (retries === 0) throw err;
+
+                // Wait before retry
+                await new Promise(resolve => setTimeout(resolve, delay));
+                delay *= 1.5; // Exponential backoff (2s, 3s, 4.5s, 6.75s, 10s)
+            }
         }
-        return this.pool;
+
+        throw new Error("Failed to connect to Azure SQL Database after multiple attempts");
     }
 
     // ==========================================
@@ -131,7 +176,7 @@ export class AzureSQLClient {
         UPDATE patients 
         SET data = @data, updatedAt = @updatedAt 
         WHERE id = @id
-      `);        return updated;
+      `); return updated;
     }
 
     async deletePatient(id: string): Promise<boolean> {
