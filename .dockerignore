@@ -70,9 +70,8 @@ temp
 *.tar.gz
 *.rar
 
-# Scripts (not needed in production)
-scripts
-!scripts/build.ts
+# Scripts - keep build script!
+# scripts folder is NEEDED for npm run build
 
 # Development files
 docker-compose*.yml
