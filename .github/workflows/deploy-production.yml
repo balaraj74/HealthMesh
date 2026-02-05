@@ -48,10 +48,19 @@ jobs:
       run: |
         echo "📦 Creating deployment ZIP..."
         
-        # Create a simple ZIP with everything needed
-        zip -r deploy.zip dist node_modules shared package.json -q
+        # Create ZIP with only files that exist
+        echo "Including: dist/, node_modules/, package.json"
+        zip -r deploy.zip dist node_modules package.json -q
+        
+        # Add shared folder only if it exists
+        if [ -d "shared" ]; then
+          echo "Including: shared/"
+          zip -r deploy.zip shared -q
+        fi
         
         echo "✅ ZIP created: $(du -h deploy.zip | cut -f1)"
+        echo "📋 ZIP contents:"
+        unzip -l deploy.zip | head -20
 
     - name: 🔐 Azure Login
       uses: azure/login@v1
@@ -71,16 +80,30 @@ jobs:
         USERNAME=$(echo $CREDS | jq -r .username)
         PASSWORD=$(echo $CREDS | jq -r .password)
         
+        echo "Username: $USERNAME"
+        
         # Upload using Kudu REST API (most reliable method)
-        echo "Uploading deployment package..."
-        curl -X POST \
+        echo "Uploading deployment package to Kudu..."
+        HTTP_CODE=$(curl -X POST \
           -u "$USERNAME:$PASSWORD" \
           --data-binary @deploy.zip \
           https://healthmesh.scm.azurewebsites.net/api/zipdeploy \
-          -H "Content-Type: application/zip" \
-          --fail \
+          -H "Content-Type: application/octet-stream" \
+          --write-out "%{http_code}" \
+          --output /tmp/deploy-response.txt \
           --show-error \
-          --max-time 600
+          --max-time 600)
+        
+        echo "HTTP Response Code: $HTTP_CODE"
+        
+        if [ $HTTP_CODE -eq 200 ] || [ $HTTP_CODE -eq 202 ]; then
+          echo "✅ Upload successful!"
+          cat /tmp/deploy-response.txt
+        else
+          echo "❌ Upload failed with HTTP $HTTP_CODE"
+          cat /tmp/deploy-response.txt
+          exit 1
+        fi
 
     - name: ⏳ Wait for deployment
       run: |
