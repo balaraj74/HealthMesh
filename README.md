@@ -161,7 +161,7 @@
 │  │                     │    │                     │    │   SERVICES      │ │
 │  │  • React 18 + TS    │    │  • Express.js       │    │                 │ │
 │  │  • Tailwind CSS     │◄──►│  • TypeScript       │◄──►│ 🔵 Azure OpenAI │ │
-│  │  • Radix UI         │    │  • Node.js 20       │    │    (GPT-4o)     │ │
+│  │  • Radix UI         │    │  • Node.js 22       │    │    (GPT-4o)     │ │
 │  │  • TanStack Query   │    │  • RESTful APIs     │    │ 📋 Rule Fallback│ │
 │  │  • Wouter Router    │    │  • Multi-Agent      │    │                 │ │
 │  └─────────────────────┘    └─────────────────────┘    └─────────────────┘ │
@@ -209,7 +209,7 @@
 |------------|---------|---------|
 | Express.js | 4.x | Web Framework |
 | TypeScript | 5.x | Type Safety |
-| Node.js | 20.x | Runtime |
+| Node.js | 22.x LTS | Runtime |
 | mssql | 11.x | Azure SQL Client |
 | Zod | 3.x | Schema Validation |
 | MSAL Node | 2.x | Azure AD Authentication |
@@ -295,7 +295,7 @@ healthmesh/
 
 ### Prerequisites
 
-- **Node.js** 20+ ([Download](https://nodejs.org/))
+- **Node.js** 22 LTS ([Download](https://nodejs.org/))
 - **Azure Subscription** ([Create free account](https://azure.microsoft.com/free/))
 - **Azure CLI** ([Install](https://docs.microsoft.com/cli/azure/install-azure-cli))
 

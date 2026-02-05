@@ -66,7 +66,7 @@ Make sure you have:
    - **Resource Group:** HealthMesh
    - **Name:** `healthmesh-pes` (or any unique name)
    - **Publish:** Code
-   - **Runtime stack:** Node 20 LTS
+   - **Runtime stack:** Node 22 LTS
    - **Operating System:** Linux
    - **Region:** **Choose same region as SQL Server**
 
@@ -110,7 +110,7 @@ VITE_AZURE_AD_REDIRECT_URI = https://<your-app-name>.azurewebsites.net/login
 # Build Settings
 SCM_DO_BUILD_DURING_DEPLOYMENT = false
 ENABLE_ORYX_BUILD = false
-WEBSITE_NODE_DEFAULT_VERSION = ~20
+WEBSITE_NODE_DEFAULT_VERSION = ~22
 WEBSITE_RUN_FROM_PACKAGE = 1
 WEBSITE_HTTPLOGGING_RETENTION_DAYS = 3
 ```
@@ -195,7 +195,7 @@ If you get stuck in a login loop:
 
 ### App Won't Start
 1. Check logs: Portal → App Service → Log stream
-2. Verify Node version is 20 LTS
+2. Verify Node version is 22 LTS
 3. Check environment variables are set correctly
 
 ---
