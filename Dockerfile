@@ -19,8 +19,16 @@ RUN npm install --legacy-peer-deps && \
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Verify source files exist before build
+RUN ls -la && \
+    echo "Checking for tsconfig.json..." && \
+    cat tsconfig.json && \
+    echo "Running build..." && \
+    npm run build && \
+    echo "Build complete! Checking dist folder..." && \
+    ls -la dist/ && \
+    echo "Dist folder contents:" && \
+    find dist/ -type f | head -20
 
 # ==========================================
 # Stage 2: Production - Lightweight runtime
