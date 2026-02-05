@@ -95,8 +95,29 @@ async function throwIfResNotOk(res: Response) {
       throw new Error("Access denied - you don't have permission to access this resource");
     }
 
+    // Handle 503 Service Unavailable (database cold start)
+    // DON'T redirect to login - this is NOT an auth failure
+    if (res.status === 503) {
+      console.warn("[API] 503 Service Unavailable - database may be starting up");
+      throw new ServiceUnavailableError("Service temporarily unavailable. Please wait a moment and try again.");
+    }
+
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
+  }
+}
+
+/**
+ * Custom error class for 503 responses (database cold start)
+ * Used to differentiate from auth errors and enable proper retry logic
+ */
+export class ServiceUnavailableError extends Error {
+  public readonly retryAfter: number = 10;
+  
+  constructor(message: string, retryAfter: number = 10) {
+    super(message);
+    this.name = "ServiceUnavailableError";
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -155,6 +176,7 @@ export const getQueryFn: <T>(options: {
 
 /**
  * React Query client instance
+ * Configured with retry logic for 503 errors (database cold starts)
  */
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -163,10 +185,25 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,
-      retry: false,
+      // Retry up to 3 times for 503 errors (database cold start)
+      retry: (failureCount, error) => {
+        if (error instanceof ServiceUnavailableError && failureCount < 3) {
+          console.log(`[QUERY] Retrying after 503... (attempt ${failureCount + 1}/3)`);
+          return true;
+        }
+        return false;
+      },
+      retryDelay: (attemptIndex) => Math.min(3000 * (attemptIndex + 1), 10000),
     },
     mutations: {
-      retry: false,
+      // Retry mutations for 503 errors as well
+      retry: (failureCount, error) => {
+        if (error instanceof ServiceUnavailableError && failureCount < 3) {
+          return true;
+        }
+        return false;
+      },
+      retryDelay: (attemptIndex) => Math.min(3000 * (attemptIndex + 1), 10000),
     },
   },
 });

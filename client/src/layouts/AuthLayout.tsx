@@ -21,35 +21,24 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-background">
-      {/* Animated Ambient Background */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-primary/20 blur-[120px] animate-fade-in" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-blue-500/20 blur-[120px] animate-fade-in" style={{ animationDelay: "0.5s" }} />
-        <div className="absolute top-[30%] left-[50%] -translate-x-1/2 w-[50vw] h-[50vw] rounded-full bg-indigo-500/10 blur-[150px] animate-pulse" style={{ animationDuration: "8s" }} />
-        {/* Grid Pattern Overlay */}
-        <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" style={{ opacity: 0.1 }} />
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+      {/* Theme toggle in top right */}
+      <div className="absolute top-4 right-4 z-50">
+        <ThemeToggle />
       </div>
 
-      <div className="relative z-10 flex-1 flex flex-col">
-        {/* Theme toggle in top right */}
-        <div className="absolute top-6 right-6 z-50">
-          <ThemeToggle />
-        </div>
-
-        {/* Main content - centered */}
-        <div className="flex-1 flex items-center justify-center p-4">
-          {children}
-        </div>
-
-        {/* Footer */}
-        <footer className="py-8 text-center text-sm text-muted-foreground/60 backdrop-blur-sm">
-          <p className="font-medium tracking-wide">HealthMesh © 2026</p>
-          <p className="mt-2 text-xs opacity-75">
-            Advanced Clinical Decision Support System
-          </p>
-        </footer>
+      {/* Main content - centered */}
+      <div className="flex-1 flex items-center justify-center p-4">
+        {children}
       </div>
+
+      {/* Footer */}
+      <footer className="py-6 text-center text-sm text-slate-600 dark:text-slate-400">
+        <p>HealthMesh © 2025 | Decision Support Only</p>
+        <p className="mt-1 text-xs">
+          This system is intended for use by authorized healthcare professionals only
+        </p>
+      </footer>
     </div>
   );
 }

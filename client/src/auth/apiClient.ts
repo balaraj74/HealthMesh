@@ -128,6 +128,17 @@ class APIClient {
       throw new Error("You don't have permission to access this resource");
     }
 
+    // Handle 503 Service Unavailable (database cold start)
+    // DON'T redirect to login - this is NOT an auth failure
+    if (response.status === 503) {
+      console.warn("[API_CLIENT] ⚠️ 503 Service Unavailable - database may be starting up");
+      const error = await response.json().catch(() => ({
+        message: "Service temporarily unavailable. Please wait a moment and try again.",
+        retryAfter: 10,
+      }));
+      throw new Error(error.message || "Service temporarily unavailable. Please try again.");
+    }
+
     if (!response.ok) {
       const error = await response.json().catch(() => ({
         message: response.statusText,

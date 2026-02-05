@@ -365,6 +365,19 @@ export async function validateEntraToken(
     } catch (error: any) {
         console.error(`[AUTH:${requestId}] ❌ ${error.message}`);
 
+        // Check for database connection errors - return 503 (Service Unavailable)
+        // This prevents the frontend from thinking auth failed and redirecting to login
+        if (isDatabaseError(error)) {
+            console.error(`[AUTH:${requestId}] ⚠️ Database connection issue - returning 503`);
+            res.status(503).json({
+                error: "Service temporarily unavailable",
+                message: "Database is starting up. Please wait a moment and try again.",
+                code: "DATABASE_UNAVAILABLE",
+                retryAfter: 10, // Suggest retry after 10 seconds
+            });
+            return;
+        }
+
         if (error.name === "TokenExpiredError") {
             res.status(401).json({
                 error: "Token expired",
@@ -389,6 +402,34 @@ export async function validateEntraToken(
             code: "AUTH_FAILED",
         });
     }
+}
+
+/**
+ * Check if error is related to database connection issues
+ * These should return 503, not 401, to prevent login redirect loops
+ */
+function isDatabaseError(error: any): boolean {
+    const message = error?.message?.toLowerCase() || "";
+    const code = error?.code?.toLowerCase() || "";
+    
+    // Azure SQL connection errors
+    if (message.includes("azure sql") ||
+        message.includes("connection") ||
+        message.includes("database") ||
+        message.includes("econnreset") ||
+        message.includes("econnrefused") ||
+        message.includes("timeout") ||
+        message.includes("etimedout") ||
+        message.includes("esocket") ||
+        message.includes("not open") ||
+        message.includes("socket hang up") ||
+        message.includes("pool") ||
+        code === "econnreset" ||
+        code === "enotopen" ||
+        code === "esocket") {
+        return true;
+    }
+    return false;
 }
 
 // ============================================================================
