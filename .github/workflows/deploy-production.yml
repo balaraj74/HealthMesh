@@ -45,36 +45,83 @@ jobs:
 
     - name: 📦 Prepare deployment package
       run: |
-        echo "📦 Preparing deployment files..."
+        echo "📦 Creating deployment package..."
         
-        # Create a clean package.json for production
-        cat > package.json.production << 'EOF'
+        # Create deployment folder
+        mkdir -p deploy-package
+        
+        # Copy only what's needed
+        cp -r dist deploy-package/
+        cp -r node_modules deploy-package/
+        
+        # Copy shared if exists
+        if [ -d "shared" ]; then
+          cp -r shared deploy-package/
+        fi
+        
+        # Create production package.json
+        cat > deploy-package/package.json << 'EOF'
         {
           "name": "healthmesh",
           "version": "2.0.0",
           "type": "module",
+          "main": "dist/index.js",
           "scripts": {
             "start": "node dist/index.js"
           },
           "engines": {
-            "node": ">=22.0.0"
+            "node": "22.x",
+            "npm": ">=10.0.0"
           }
         }
         EOF
         
-        # Replace package.json with production version
-        mv package.json.production package.json
+        # Create web.config for Azure (optional but helps)
+        cat > deploy-package/web.config << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <system.webServer>
+            <handlers>
+              <add name="iisnode" path="dist/index.js" verb="*" modules="iisnode"/>
+            </handlers>
+            <rewrite>
+              <rules>
+                <rule name="NodeInspector" patternSyntax="ECMAScript" stopProcessing="true">
+                  <match url="^dist/index.js\/debug[\/]?" />
+                </rule>
+                <rule name="StaticContent">
+                  <action type="Rewrite" url="public{REQUEST_URI}"/>
+                </rule>
+                <rule name="DynamicContent">
+                  <conditions>
+                    <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
+                  </conditions>
+                  <action type="Rewrite" url="dist/index.js"/>
+                </rule>
+              </rules>
+            </rewrite>
+            <security>
+              <requestFiltering>
+                <hiddenSegments>
+                  <remove segment="bin"/>
+                </hiddenSegments>
+              </requestFiltering>
+            </security>
+            <httpErrors existingResponse="PassThrough" />
+          </system.webServer>
+        </configuration>
+        EOF
         
         echo "✅ Deployment package ready"
-        echo "📁 Contents:"
-        ls -lh dist/ | head -10
+        echo "📁 Package structure:"
+        ls -lh deploy-package/ | head -15
 
     - name: 🚀 Deploy to Azure Web App
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: .
+        package: ./deploy-package
 
     - name: ✅ Deployment complete
       run: |
