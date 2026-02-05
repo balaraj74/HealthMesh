@@ -72,4 +72,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
 
 # Start application with dumb-init (proper signal handling)
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/index.cjs"]
