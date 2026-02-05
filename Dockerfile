@@ -19,16 +19,18 @@ RUN npm install --legacy-peer-deps && \
 # Copy source code
 COPY . .
 
-# Verify source files exist before build
-RUN ls -la && \
-    echo "Checking for tsconfig.json..." && \
-    cat tsconfig.json && \
-    echo "Running build..." && \
-    npm run build && \
-    echo "Build complete! Checking dist folder..." && \
-    ls -la dist/ && \
-    echo "Dist folder contents:" && \
-    find dist/ -type f | head -20
+# Build arguments for Vite (Frontend config)
+ARG VITE_AZURE_AD_CLIENT_ID
+ARG VITE_AZURE_AD_TENANT_ID
+ARG VITE_AZURE_AD_REDIRECT_URI
+
+# Set ENV from ARG for the build process
+ENV VITE_AZURE_AD_CLIENT_ID=$VITE_AZURE_AD_CLIENT_ID \
+    VITE_AZURE_AD_TENANT_ID=$VITE_AZURE_AD_TENANT_ID \
+    VITE_AZURE_AD_REDIRECT_URI=$VITE_AZURE_AD_REDIRECT_URI
+
+# Build the application
+RUN npm run build
 
 # ==========================================
 # Stage 2: Production - Lightweight runtime

@@ -34,6 +34,9 @@ jobs:
         echo "Building Docker image..."
         docker build \
           --build-arg NODE_ENV=production \
+          --build-arg VITE_AZURE_AD_CLIENT_ID=6116990b-c0d4-42fd-bb31-006498740273 \
+          --build-arg VITE_AZURE_AD_TENANT_ID=e290fb02-d184-4a8c-ae49-c83b04485909 \
+          --build-arg VITE_AZURE_AD_REDIRECT_URI=https://healthmesh.azurewebsites.net/login \
           --tag ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
           --tag ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
           .
