@@ -11,8 +11,10 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (including dev dependencies for build)
-RUN npm ci --legacy-peer-deps
+# Install ALL dependencies (use npm install for Docker compatibility)
+# npm ci can have issues with workspaces in Docker
+RUN npm install --legacy-peer-deps && \
+    npm cache clean --force
 
 # Copy source code
 COPY . .
@@ -40,14 +42,11 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install ONLY production dependencies
-RUN npm ci --production --legacy-peer-deps --ignore-scripts && \
+RUN npm install --production --legacy-peer-deps --ignore-scripts && \
     npm cache clean --force
 
 # Copy built application from builder stage
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-
-# Copy shared folder if exists
-COPY --from=builder --chown=nodejs:nodejs /app/shared ./shared 2>/dev/null || true
+COPY --from=builder --chown=nodejs:nodejs /app/dist/ ./dist/
 
 # Environment variables
 ENV NODE_ENV=production \
@@ -61,7 +60,7 @@ USER nodejs
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
-  CMD node -e "require('http').get('http://localhost:8080/api/health', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"
+    CMD node -e "require('http').get('http://localhost:8080/api/health', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"
 
 # Start application with dumb-init (proper signal handling)
 ENTRYPOINT ["dumb-init", "--"]
