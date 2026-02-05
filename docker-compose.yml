@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  healthmesh:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: healthmesh
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+    env_file:
+      - .env
+    volumes:
+      # Mount for logs (optional)
+      - ./logs:/app/logs
+    networks:
+      - healthmesh-network
+    healthcheck:
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:8080/api/health', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  healthmesh-network:
+    driver: bridge

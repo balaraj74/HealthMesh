@@ -1,15 +1,16 @@
-name: Deploy to Azure App Service (Production)
+name: Deploy Docker Container to Azure
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:  # Allows manual deployment from GitHub UI
+  workflow_dispatch:
 
 env:
   AZURE_WEBAPP_NAME: healthmesh
+  REGISTRY_NAME: healthmeshregistry
+  IMAGE_NAME: healthmesh
   NODE_VERSION: '22.x'
-  # Force refresh: 2026-02-05
 
 jobs:
   build-and-deploy:
@@ -19,114 +20,73 @@ jobs:
     - name: 📥 Checkout code
       uses: actions/checkout@v4
 
-    - name: � Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    - name: �🟢 Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-
-    - name: 📦 Install dependencies
-      run: npm ci --legacy-peer-deps
-
-    - name: 🔨 Build application
-      env:
-        VITE_AZURE_AD_CLIENT_ID: 6116990b-c0d4-42fd-bb31-006498740273
-        VITE_AZURE_AD_TENANT_ID: e290fb02-d184-4a8c-ae49-c83b04485909
-        VITE_AZURE_AD_REDIRECT_URI: https://healthmesh.azurewebsites.net/login
-        NODE_ENV: production
-      run: npm run build
-
-    - name: 📁 Install production dependencies
-      run: npm ci --production --ignore-scripts --legacy-peer-deps
-
-    - name: 📦 Create deployment ZIP
-      run: |
-        echo "📦 Creating deployment ZIP..."
-        
-        # Create ZIP with only files that exist
-        echo "Including: dist/, node_modules/, package.json"
-        zip -r deploy.zip dist node_modules package.json -q
-        
-        # Add shared folder only if it exists
-        if [ -d "shared" ]; then
-          echo "Including: shared/"
-          zip -r deploy.zip shared -q
-        fi
-        
-        echo "✅ ZIP created: $(du -h deploy.zip | cut -f1)"
-        echo "📋 ZIP contents:"
-        unzip -l deploy.zip | head -20
-
     - name: 🔐 Azure Login
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: 🚀 Upload deployment package
+    - name: 🐳 Login to Azure Container Registry
       run: |
-        # Get publishing credentials
-        echo "Getting deployment credentials..."
-        CREDS=$(az webapp deployment list-publishing-credentials \
+        az acr login --name ${{ env.REGISTRY_NAME }}
+
+    - name: 🏗️ Build Docker image
+      run: |
+        echo "Building Docker image..."
+        docker build \
+          --build-arg NODE_ENV=production \
+          --tag ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+          --tag ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
+          .
+        
+        echo "✅ Docker image built successfully"
+        docker images | grep healthmesh
+
+    - name: 🚀 Push Docker image to ACR
+      run: |
+        echo "Pushing image to Azure Container Registry..."
+        docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+        echo "✅ Image pushed successfully"
+
+    - name: ⚙️ Configure App Service for Containers
+      run: |
+        echo "Configuring App Service to use container..."
+        
+        # Set container settings
+        az webapp config container set \
           --resource-group HealthMesh \
-          --name healthmesh \
-          --query "{username:publishingUserName,password:publishingPassword}" \
-          --output json)
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --docker-custom-image-name ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+          --docker-registry-server-url https://${{ env.REGISTRY_NAME }}.azurecr.io
         
-        USERNAME=$(echo $CREDS | jq -r .username)
-        PASSWORD=$(echo $CREDS | jq -r .password)
+        # Enable continuous deployment (webhook)
+        az webapp deployment container config \
+          --resource-group HealthMesh \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --enable-cd true
         
-        echo "Username: $USERNAME"
-        
-        # Upload using Kudu REST API (most reliable method)
-        echo "Uploading deployment package to Kudu..."
-        HTTP_CODE=$(curl -X POST \
-          -u "$USERNAME:$PASSWORD" \
-          --data-binary @deploy.zip \
-          https://healthmesh.scm.azurewebsites.net/api/zipdeploy \
-          -H "Content-Type: application/octet-stream" \
-          --write-out "%{http_code}" \
-          --output /tmp/deploy-response.txt \
-          --show-error \
-          --max-time 600)
-        
-        echo "HTTP Response Code: $HTTP_CODE"
-        
-        if [ $HTTP_CODE -eq 200 ] || [ $HTTP_CODE -eq 202 ]; then
-          echo "✅ Upload successful!"
-          cat /tmp/deploy-response.txt
-        else
-          echo "❌ Upload failed with HTTP $HTTP_CODE"
-          cat /tmp/deploy-response.txt
-          exit 1
-        fi
+        echo "✅ App Service configured"
+
+    - name: 🔄 Restart App Service
+      run: |
+        echo "Restarting App Service..."
+        az webapp restart \
+          --resource-group HealthMesh \
+          --name ${{ env.AZURE_WEBAPP_NAME }}
+        echo "✅ App Service restarted"
 
     - name: ⏳ Wait for deployment
       run: |
-        echo "Waiting for deployment to complete..."
-        sleep 20
-
-    - name: 🔄 Restart app
-      run: |
-        echo "Restarting application..."
-        az webapp restart \
-          --resource-group HealthMesh \
-          --name healthmesh
+        echo "Waiting for app to be ready..."
+        sleep 30
 
     - name: ✅ Deployment complete
       run: |
         echo "🎉 Deployment successful!"
-        echo "🌐 Application URL: https://healthmesh.azurewebsites.net"
+        echo "🌐 Application URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+        echo "📦 Image: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}"
         echo "⏰ Deployed at: $(date)"
         
-        echo "⏳ Waiting for app to be ready..."
-        sleep 15
-        
         echo "🔍 Testing application..."
-        curl -I https://healthmesh.azurewebsites.net || echo "App is starting (this is normal)"
-
-
+        sleep 10
+        curl -I https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net || echo "App is starting (check logs in Azure Portal)"
