@@ -9,6 +9,7 @@ on:
 env:
   AZURE_WEBAPP_NAME: healthmesh
   NODE_VERSION: '22.x'
+  # Force refresh: 2026-02-05
 
 jobs:
   build-and-deploy:
