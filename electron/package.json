@@ -1,0 +1,16 @@
+{
+  "name": "healthmesh-desktop",
+  "version": "1.0.0",
+  "description": "HealthMesh - Intelligent Healthcare Management Platform",
+  "main": "main.js",
+  "author": {
+    "name": "HealthMesh Team",
+    "email": "support@healthmesh.com"
+  },
+  "license": "MIT",
+  "homepage": "https://healthmesh.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/balaraj74/HealthMesh"
+  }
+}

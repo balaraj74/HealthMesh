@@ -4,6 +4,11 @@
   "description": "HealthMesh - Intelligent Healthcare Management Platform",
   "type": "module",
   "license": "MIT",
+  "author": {
+    "name": "HealthMesh Team",
+    "email": "support@healthmesh.com"
+  },
+  "main": "electron/main.js",
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "tsx script/build.ts",
@@ -12,7 +17,16 @@
     "lint": "eslint . --ext .ts,.tsx",
     "db:push": "drizzle-kit push",
     "security-audit": "tsx scripts/security-audit.ts",
-    "audit": "npm audit --audit-level=moderate"
+    "audit": "npm audit --audit-level=moderate",
+    "icons": "tsx scripts/generate-icons.ts",
+    "electron:dev": "npm run build && electron .",
+    "electron:build": "tsx scripts/build-desktop.ts",
+    "electron:build:win": "tsx scripts/build-desktop.ts win",
+    "electron:build:linux": "tsx scripts/build-desktop.ts linux",
+    "electron:build:all": "tsx scripts/build-desktop.ts all",
+    "dist:win": "npm run build && npx electron-builder --win nsis portable --x64",
+    "dist:linux": "npm run build && npx electron-builder --linux deb AppImage --x64",
+    "dist:all": "npm run build && npx electron-builder --win nsis portable --linux deb AppImage --x64"
   },
   "dependencies": {
     "@azure/ai-form-recognizer": "^5.0.0",
@@ -130,12 +144,19 @@
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.20",
     "drizzle-kit": "^0.18.1",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
     "esbuild": "^0.25.0",
+    "png-to-ico": "^3.0.1",
     "postcss": "^8.4.47",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.20.5",
     "typescript": "5.6.3",
     "vite": "^7.3.1"
+  },
+  "build": {
+    "extends": "electron-builder.json"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"

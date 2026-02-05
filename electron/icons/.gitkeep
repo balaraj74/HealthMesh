@@ -1,0 +1,5 @@
+# Icon files go here
+# Required files:
+# - icon.png (512x512 for all platforms)
+# - icon.ico (Windows - can be generated from PNG)
+# - icon.icns (macOS - can be generated from PNG)

@@ -1,0 +1,139 @@
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "com.healthmesh.desktop",
+  "productName": "HealthMesh",
+  "copyright": "Copyright © 2026 HealthMesh",
+  "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+  
+  "directories": {
+    "output": "release",
+    "buildResources": "electron/icons"
+  },
+  
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "!electron/icons/.gitkeep",
+    "package.json",
+    "!**/node_modules/*/{CHANGELOG.md,README.md,readme.md,readme,README}",
+    "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+    "!**/node_modules/.cache"
+  ],
+  
+  "asarUnpack": [
+    "dist/**/*"
+  ],
+  
+  "npmRebuild": false,
+  
+  "extraResources": [
+    {
+      "from": "dist",
+      "to": "server",
+      "filter": ["**/*"]
+    }
+  ],
+  
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "electron/icons/icon.ico",
+    "requestedExecutionLevel": "asInvoker"
+  },
+  
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "HealthMesh",
+    "installerIcon": "electron/icons/icon.ico",
+    "uninstallerIcon": "electron/icons/icon.ico",
+    "installerHeaderIcon": "electron/icons/icon.ico",
+    "deleteAppDataOnUninstall": true
+  },
+  
+  "linux": {
+    "target": [
+      {
+        "target": "deb",
+        "arch": ["x64"]
+      },
+      {
+        "target": "AppImage",
+        "arch": ["x64"]
+      },
+      {
+        "target": "rpm",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "electron/icons",
+    "category": "Office;MedicalSoftware",
+    "maintainer": "HealthMesh Team <support@healthmesh.com>",
+    "vendor": "HealthMesh",
+    "synopsis": "Intelligent Healthcare Management Platform",
+    "description": "HealthMesh is an AI-powered healthcare management platform that helps clinicians make better decisions through intelligent clinical decision support, lab trend analysis, and medication safety monitoring."
+  },
+  
+  "deb": {
+    "depends": [
+      "libgtk-3-0",
+      "libnotify4",
+      "libnss3",
+      "libxss1",
+      "libxtst6",
+      "xdg-utils",
+      "libatspi2.0-0",
+      "libuuid1",
+      "libsecret-1-0"
+    ],
+    "priority": "optional",
+    "packageCategory": "medical"
+  },
+  
+  "mac": {
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      }
+    ],
+    "icon": "electron/icons/icon.icns",
+    "category": "public.app-category.medical",
+    "darkModeSupport": true,
+    "hardenedRuntime": true
+  },
+  
+  "dmg": {
+    "title": "HealthMesh ${version}",
+    "icon": "electron/icons/icon.icns",
+    "contents": [
+      {
+        "x": 130,
+        "y": 220
+      },
+      {
+        "x": 410,
+        "y": 220,
+        "type": "link",
+        "path": "/Applications"
+      }
+    ]
+  },
+  
+  "publish": {
+    "provider": "github",
+    "owner": "balaraj74",
+    "repo": "HealthMesh",
+    "releaseType": "release"
+  }
+}
