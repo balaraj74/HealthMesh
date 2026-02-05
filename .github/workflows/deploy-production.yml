@@ -45,32 +45,85 @@ jobs:
 
     - name: 📦 Prepare deployment package
       run: |
-        # Create .deployment file to skip build
-        cat > .deployment << 'EOF'
-        [config]
-        SCM_DO_BUILD_DURING_DEPLOYMENT = false
+        # Create deployment directory
+        mkdir -p deploy
+        
+        # Copy built application
+        cp -r dist deploy/
+        cp -r node_modules deploy/
+        cp package.json deploy/
+        
+        # Copy shared folder if exists
+        if [ -d "shared" ]; then
+          cp -r shared deploy/
+        fi
+        
+        # Create simple startup script
+        cat > deploy/server.js << 'EOF'
+        // Simple startup wrapper for Azure
+        import('./dist/index.js').catch(err => {
+          console.error('Failed to start server:', err);
+          process.exit(1);
+        });
         EOF
         
-        # Zip everything needed for Linux App Service
-        zip -r deploy.zip dist shared node_modules package.json .deployment -q
+        # Update package.json for Azure
+        cd deploy
+        cat > package.json << 'EOF'
+        {
+          "name": "healthmesh",
+          "version": "1.0.0",
+          "type": "module",
+          "scripts": {
+            "start": "node server.js"
+          },
+          "engines": {
+            "node": "22.x"
+          }
+        }
+        EOF
+        
+        cd ..
+        
+        # Create zip for deployment
+        cd deploy
+        zip -r ../deploy.zip . -q
+        cd ..
+        
         echo "✅ Deployment package created: $(du -h deploy.zip | cut -f1)"
-        echo "📁 Package contents:"
-        unzip -l deploy.zip | head -20
 
-    - name: � Azure Login
+    - name: 🔐 Azure Login
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: 🚀 Deploy to Azure Web App
       run: |
-        az webapp deployment source config-zip \
+        echo "🚀 Deploying to Azure App Service..."
+        az webapp deploy \
           --resource-group HealthMesh \
           --name ${{ env.AZURE_WEBAPP_NAME }} \
-          --src deploy.zip
+          --src-path deploy.zip \
+          --type zip \
+          --async false \
+          --timeout 600
+        
+        echo "⏳ Waiting for deployment to stabilize..."
+        sleep 30
+        
+        echo "✅ Restarting app..."
+        az webapp restart \
+          --resource-group HealthMesh \
+          --name ${{ env.AZURE_WEBAPP_NAME }}
 
     - name: ✅ Deployment complete
       run: |
         echo "🎉 Deployment successful!"
         echo "🌐 Application URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
         echo "⏰ Deployed at: $(date)"
+        
+        # Test if app is responding
+        echo "🔍 Testing application..."
+        sleep 10
+        curl -f -s -o /dev/null -w "HTTP Status: %{http_code}\n" https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net || true
+
