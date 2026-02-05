@@ -63,3 +63,11 @@ secrets/
 # Misc
 server/scripts/fix-production.ts
 server/scripts/setup-production.cjs
+
+# Electron build output
+release/
+*.exe
+*.deb
+*.AppImage
+*.rpm
+*.dmg
