@@ -8,8 +8,7 @@
  * ❌ NO signup form
  * ✅ Microsoft Entra ID ONLY
  * 
- * This page provides a clean, enterprise-grade login experience
- * using Microsoft Entra ID (Azure AD) for authentication.
+ * 🔥 ELITE VIBE-CODED: Premium animations, glowing CTAs, human warmth
  */
 
 import { useEffect, useState, useRef } from "react";
@@ -29,13 +28,16 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Loader2,
   Shield,
-  Activity,
   AlertCircle,
   Building2,
   Lock,
   CheckCircle2,
+  HeartPulse,
+  Stethoscope,
+  Users,
 } from "lucide-react";
 import { AuthLayout } from "@/layouts/AuthLayout";
+import { SEO, pageSEO } from "@/components/seo";
 
 export default function Login() {
   const { instance, inProgress, accounts } = useMsal();
@@ -43,67 +45,45 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isProcessingCallback, setIsProcessingCallback] = useState(false);
   const hasRedirected = useRef(false);
 
-  // Check if this is a redirect callback from Microsoft
   const isRedirectCallback = window.location.hash.includes("code=") ||
     window.location.hash.includes("id_token=") ||
     window.location.search.includes("code=");
 
-  // Debug logging
   useEffect(() => {
     console.log("[Login] Auth state - isAuthenticated:", isAuthenticated, "inProgress:", inProgress, "accounts:", accounts.length);
-    console.log("[Login] Current URL:", window.location.href);
-    console.log("[Login] Is redirect callback:", isRedirectCallback);
-    console.log("[Login] Active account:", instance.getActiveAccount()?.username);
-  }, [isAuthenticated, inProgress, accounts, isRedirectCallback, instance]);
+  }, [isAuthenticated, inProgress, accounts]);
 
-  // Handle redirect callback
   useEffect(() => {
-    if (isRedirectCallback && inProgress === InteractionStatus.HandleRedirect) {
-      setIsProcessingCallback(true);
-      console.log("[Login] Processing redirect callback...");
-    }
-  }, [isRedirectCallback, inProgress]);
-
-  // Redirect to dashboard if already authenticated
-  useEffect(() => {
-    // Only redirect when MSAL is completely done processing
     if (inProgress === InteractionStatus.None && !hasRedirected.current) {
       if (isAuthenticated && accounts.length > 0) {
         console.log("[Login] User authenticated - redirecting to dashboard");
-        console.log("[Login] Active account:", instance.getActiveAccount()?.username);
         hasRedirected.current = true;
-        // Use setLocation for SPA navigation (no full page reload)
-        // Adding a small delay to ensure MSAL state is fully propagated
         setTimeout(() => {
-          setLocation("/");
+          setLocation("/dashboard");
         }, 100);
       }
     }
   }, [isAuthenticated, inProgress, accounts, instance, setLocation]);
 
-  // Show loading while MSAL is handling redirect
-  // inProgress can be: "none", "handleRedirect", "login", "logout", etc.
   if (inProgress !== "none" && inProgress !== "login") {
-    console.log("[Login] MSAL operation in progress:", inProgress);
     return (
       <AuthLayout>
-        <div className="w-full max-w-md">
-          <div className="text-center space-y-4">
-            <div className="relative">
-              <div className="absolute inset-0 bg-[#0078D4]/20 rounded-full blur-xl animate-pulse" />
-              <div className="relative bg-white dark:bg-slate-900 p-4 rounded-full shadow-lg mx-auto w-fit">
-                <Shield className="h-12 w-12 text-[#0078D4]" />
+        <div className="w-full max-w-md animate-fadeIn">
+          <div className="text-center space-y-6">
+            <div className="relative mx-auto w-fit">
+              <div className="absolute inset-0 bg-primary/40 rounded-full blur-2xl animate-pulse" />
+              <div className="relative bg-card border border-border/50 p-5 rounded-2xl shadow-xl">
+                <HeartPulse className="h-14 w-14 text-primary" />
               </div>
             </div>
-            <div className="space-y-2">
-              <Loader2 className="h-6 w-6 animate-spin text-[#0078D4] mx-auto" />
-              <p className="text-slate-600 dark:text-slate-400 font-medium">
+            <div className="space-y-3">
+              <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
+              <p className="text-lg font-medium text-foreground">
                 Completing sign-in...
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-warm-muted">
                 Processing Microsoft authentication
               </p>
             </div>
@@ -113,12 +93,9 @@ export default function Login() {
     );
   }
 
-  // Handle Microsoft login via redirect
   const handleMicrosoftLogin = async () => {
     if (!isEntraConfigured()) {
-      setError(
-        "Microsoft Entra ID is not configured. Please contact your administrator."
-      );
+      setError("Microsoft Entra ID is not configured. Please contact your administrator.");
       return;
     }
 
@@ -126,7 +103,6 @@ export default function Login() {
     setError(null);
 
     try {
-      // Use redirect flow for enterprise environments
       await instance.loginRedirect(loginRequest);
     } catch (err: any) {
       console.error("[Login] Microsoft login error:", err);
@@ -134,7 +110,6 @@ export default function Login() {
       if (err.errorCode === "user_cancelled") {
         setError("Sign-in was cancelled. Please try again.");
       } else if (err.errorCode === "popup_window_error") {
-        // Try redirect if popup is blocked
         try {
           await instance.loginRedirect(loginRequest);
           return;
@@ -142,22 +117,15 @@ export default function Login() {
           setError("Unable to open sign-in window. Please allow popups.");
         }
       } else {
-        setError(
-          err.errorMessage ||
-          err.message ||
-          "Unable to sign in with Microsoft. Please try again."
-        );
+        setError(err.errorMessage || err.message || "Unable to sign in with Microsoft. Please try again.");
       }
       setIsLoading(false);
     }
   };
 
-  // Handle Microsoft login via popup (fallback)
   const handleMicrosoftLoginPopup = async () => {
     if (!isEntraConfigured()) {
-      setError(
-        "Microsoft Entra ID is not configured. Please contact your administrator."
-      );
+      setError("Microsoft Entra ID is not configured. Please contact your administrator.");
       return;
     }
 
@@ -166,47 +134,54 @@ export default function Login() {
 
     try {
       await instance.loginPopup(loginRequest);
-      // Successful login - will redirect via useEffect
     } catch (err: any) {
       console.error("[Login] Microsoft popup login error:", err);
 
       if (err.errorCode === "user_cancelled") {
         setError("Sign-in was cancelled. Please try again.");
       } else {
-        setError(
-          err.errorMessage || err.message || "Unable to sign in with Microsoft."
-        );
+        setError(err.errorMessage || err.message || "Unable to sign in with Microsoft.");
       }
       setIsLoading(false);
     }
   };
 
+  const features = [
+    { icon: Building2, text: "Enterprise Single Sign-On (SSO)" },
+    { icon: Lock, text: "Multi-Factor Authentication (MFA)" },
+    { icon: CheckCircle2, text: "HIPAA-Compliant Authentication" },
+  ];
+
   return (
     <AuthLayout>
+      <SEO {...pageSEO.login} />
       <div className="w-full max-w-md">
-        {/* Logo and Title */}
-        <div className="text-center mb-8 space-y-2">
-          <div className="flex items-center justify-center mb-4">
-            <div className="relative">
-              <div className="absolute inset-0 bg-[#0078D4]/30 rounded-2xl blur-lg" />
-              <div className="relative bg-[#0078D4] p-3 rounded-2xl shadow-lg">
-                <Activity className="h-10 w-10 text-white" />
+        {/* Logo and Title - with staggered animation */}
+        <div className="text-center mb-8 space-y-3 opacity-0 animate-slideUp" style={{ animationFillMode: 'forwards' }}>
+          <div className="flex items-center justify-center mb-6">
+            <div className="relative group">
+              {/* Multi-layer glow */}
+              <div className="absolute inset-0 bg-primary/50 rounded-2xl blur-2xl transition-all duration-500 group-hover:blur-3xl" />
+              <div className="absolute inset-0 bg-teal-500/30 rounded-2xl blur-xl animate-pulse" style={{ animationDuration: '3s' }} />
+              <div className="relative bg-gradient-to-br from-primary to-sky-400 p-4 rounded-2xl shadow-xl transition-transform duration-300 group-hover:scale-105">
+                <HeartPulse className="h-12 w-12 text-white" />
               </div>
             </div>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-4xl font-bold tracking-tight">
             HealthMesh
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            Intelligent Healthcare Management Platform
+          <p className="text-warm-muted flex items-center justify-center gap-2">
+            <Stethoscope className="h-4 w-4 text-primary" />
+            Intelligent Healthcare Platform
           </p>
         </div>
 
         {/* Login Card */}
-        <Card className="shadow-xl border-slate-200 dark:border-slate-800">
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
-            <CardDescription>
+        <Card className="shadow-2xl border-border/50 bg-card/90 backdrop-blur-xl opacity-0 animate-slideUp stagger-2" style={{ animationFillMode: 'forwards' }}>
+          <CardHeader className="space-y-2 text-center pb-4">
+            <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
+            <CardDescription className="text-warm-muted">
               Sign in with your organization's Microsoft account
             </CardDescription>
           </CardHeader>
@@ -214,22 +189,22 @@ export default function Login() {
           <CardContent className="space-y-6">
             {/* Error Alert */}
             {error && (
-              <Alert
-                variant="destructive"
-                className="animate-in fade-in-50 duration-300"
-              >
+              <Alert variant="destructive" className="animate-scaleIn border-rose-500/30 bg-rose-500/10">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
-            {/* Microsoft Login Button */}
+            {/* 🔥 COMMANDING Microsoft Login Button */}
             <div className="space-y-4">
               <Button
                 onClick={handleMicrosoftLogin}
                 disabled={isLoading || inProgress !== "none"}
-                className="w-full bg-[#0078D4] hover:bg-[#106EBE] text-white font-medium py-6 transition-all duration-200 shadow-md hover:shadow-lg"
+                className="w-full bg-[#0078D4] hover:bg-[#106EBE] text-white font-semibold py-6 glow-cta rounded-xl"
                 size="lg"
+                style={{
+                  boxShadow: '0 0 0 1px rgba(0, 120, 212, 0.3), 0 4px 20px rgba(0, 120, 212, 0.35), 0 8px 40px rgba(0, 120, 212, 0.2)'
+                }}
               >
                 {isLoading || inProgress !== "none" ? (
                   <>
@@ -249,50 +224,56 @@ export default function Login() {
                 )}
               </Button>
 
-              {/* Popup fallback button */}
               <button
                 onClick={handleMicrosoftLoginPopup}
                 disabled={isLoading || inProgress !== "none"}
-                className="w-full text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                className="w-full text-xs text-warm-muted hover:text-primary transition-colors duration-200"
               >
                 Having trouble? Try popup sign-in
               </button>
             </div>
 
-            {/* Enterprise Features */}
-            <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-              <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                <Building2 className="h-4 w-4 text-[#0078D4] flex-shrink-0" />
-                <span>Enterprise Single Sign-On (SSO)</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                <Lock className="h-4 w-4 text-[#0078D4] flex-shrink-0" />
-                <span>Multi-Factor Authentication (MFA)</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                <CheckCircle2 className="h-4 w-4 text-[#0078D4] flex-shrink-0" />
-                <span>HIPAA-Compliant Authentication</span>
-              </div>
+            {/* Enterprise Features with micro-animations */}
+            <div className="space-y-2 pt-4 border-t border-border/50">
+              {features.map((feature, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-3 text-sm text-warm p-2.5 rounded-xl hover:bg-muted/30 transition-all duration-200 group/feature opacity-0 animate-slideIn"
+                  style={{ animationDelay: `${(index + 3) * 100}ms`, animationFillMode: 'forwards' }}
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 border border-primary/20 transition-all duration-200 group-hover/feature:scale-110 group-hover/feature:bg-primary/20">
+                    <feature.icon className="h-4 w-4 text-primary" />
+                  </div>
+                  <span>{feature.text}</span>
+                </div>
+              ))}
             </div>
 
-            {/* Security Notice */}
-            <div className="space-y-2 text-center pt-4 border-t border-slate-200 dark:border-slate-700">
-              <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-500">
+            {/* Human warmth - Security Notice */}
+            <div className="space-y-2 text-center pt-4 border-t border-border/50">
+              <div className="flex items-center justify-center gap-2 text-amber-400">
                 <Shield className="h-4 w-4" />
-                <p className="text-xs font-semibold">Authorized Users Only</p>
+                <p className="text-xs font-semibold">Authorized Personnel Only</p>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                This system contains confidential patient health information
-                protected under HIPAA. Unauthorized access is prohibited.
+              <p className="text-xs text-warm-muted leading-relaxed">
+                This system contains confidential patient information protected under HIPAA.
               </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Footer */}
-        <div className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
-          <p>Protected by Microsoft Entra ID</p>
-          <p className="text-[10px]">Enterprise-grade security & compliance</p>
+        {/* Footer with human touch */}
+        <div className="mt-8 text-center text-xs text-warm-muted space-y-2 opacity-0 animate-fadeIn stagger-4" style={{ animationFillMode: 'forwards' }}>
+          <div className="flex items-center justify-center gap-4">
+            <span className="flex items-center gap-1.5">
+              <Shield className="h-3 w-3 text-primary" />
+              Protected by Microsoft Entra ID
+            </span>
+          </div>
+          <p className="flex items-center justify-center gap-1.5 text-[10px]">
+            <Users className="h-3 w-3" />
+            Caring for patients with intelligent support
+          </p>
         </div>
       </div>
     </AuthLayout>

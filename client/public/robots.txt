@@ -1,0 +1,49 @@
+# HealthMesh Robots.txt
+# https://healthmesh.azurewebsites.net/robots.txt
+
+User-agent: *
+Allow: /
+
+# Block internal app routes from indexing (authenticated areas)
+Disallow: /api/
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /_next/
+Disallow: /private/
+
+# Block session/token parameters
+Disallow: /*?sessionId=
+Disallow: /*?token=
+Disallow: /*?auth=
+
+# Block internal app pages (require authentication)
+Disallow: /dashboard
+Disallow: /cases
+Disallow: /patients
+Disallow: /labs
+Disallow: /orchestrator
+Disallow: /chat
+Disallow: /audit
+Disallow: /settings
+Disallow: /qr-scan
+Disallow: /early-deterioration
+Disallow: /medication-safety
+Disallow: /lab-trends
+Disallow: /risk-safety
+
+# Allow public pages
+Allow: /login
+Allow: /solutions
+Allow: /features
+Allow: /pricing
+Allow: /about
+Allow: /blog
+Allow: /contact
+Allow: /compliance
+Allow: /resources
+
+# Sitemap location
+Sitemap: https://healthmesh.azurewebsites.net/sitemap.xml
+
+# Crawl-delay for politeness (optional)
+Crawl-delay: 1

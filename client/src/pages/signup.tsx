@@ -44,7 +44,7 @@ export default function Signup() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      setLocation("/");
+      setLocation("/dashboard");
     }
   }, [isAuthenticated, setLocation]);
 

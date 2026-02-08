@@ -6,12 +6,13 @@ export default {
   theme: {
     extend: {
       borderRadius: {
-        lg: ".5625rem", /* 9px */
-        md: ".375rem", /* 6px */
-        sm: ".1875rem", /* 3px */
+        lg: ".75rem", /* 12px */
+        md: ".5rem", /* 8px */
+        sm: ".375rem", /* 6px */
+        xl: "1rem", /* 16px */
+        "2xl": "1.5rem", /* 24px */
       },
       colors: {
-        // Flat / base colors (regular buttons)
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
         border: "hsl(var(--border) / <alpha-value>)",
@@ -81,11 +82,51 @@ export default {
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
         },
+        // Hospital Blue color palette
+        sky: {
+          50: "#f0f9ff",
+          100: "#e0f2fe",
+          200: "#bae6fd",
+          300: "#7dd3fc",
+          400: "#38bdf8",
+          500: "#0ea5e9",
+          600: "#0284c7",
+          700: "#0369a1",
+          800: "#075985",
+          900: "#0c4a6e",
+          950: "#082f49",
+        },
+        teal: {
+          50: "#f0fdfa",
+          100: "#ccfbf1",
+          200: "#99f6e4",
+          300: "#5eead4",
+          400: "#2dd4bf",
+          500: "#14b8a6",
+          600: "#0d9488",
+          700: "#0f766e",
+          800: "#115e59",
+          900: "#134e4a",
+          950: "#042f2e",
+        },
+        navy: {
+          50: "#f0f5ff",
+          100: "#e0ebff",
+          200: "#c7d9ff",
+          300: "#a3bfff",
+          400: "#7a9bff",
+          500: "#5573f7",
+          600: "#3b4eec",
+          700: "#2f3dd9",
+          800: "#2935af",
+          900: "#27338a",
+          950: "#0c1222",
+        },
       },
       fontFamily: {
-        sans: ["'Segoe UI'", "Inter", "system-ui", "sans-serif"],
+        sans: ["'Inter'", "system-ui", "sans-serif"],
         serif: ["Georgia", "serif"],
-        mono: ["Consolas", "monospace"],
+        mono: ["'JetBrains Mono'", "Consolas", "monospace"],
       },
       boxShadow: {
         '2xs': 'var(--shadow-2xs)',
@@ -96,6 +137,10 @@ export default {
         lg: 'var(--shadow-lg)',
         xl: 'var(--shadow-xl)',
         '2xl': 'var(--shadow-2xl)',
+        // Glow shadows - Blue theme
+        'glow-blue': '0 0 20px rgba(56, 189, 248, 0.4), 0 0 40px rgba(56, 189, 248, 0.2)',
+        'glow-teal': '0 0 20px rgba(45, 212, 191, 0.4), 0 0 40px rgba(45, 212, 191, 0.2)',
+        'glow-sm': '0 0 10px rgba(56, 189, 248, 0.3)',
       },
       keyframes: {
         "accordion-down": {
@@ -106,10 +151,32 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "pulse-slow": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.5" },
+        },
+        "shimmer": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-5px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-slow": "pulse-slow 3s ease-in-out infinite",
+        "shimmer": "shimmer 2s linear infinite",
+        "float": "float 3s ease-in-out infinite",
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+        'gradient-blue': 'linear-gradient(135deg, #0ea5e9 0%, #38bdf8 50%, #7dd3fc 100%)',
+        'gradient-teal': 'linear-gradient(135deg, #14b8a6 0%, #2dd4bf 50%, #5eead4 100%)',
+        'gradient-dark': 'linear-gradient(180deg, #0c1222 0%, #080d18 100%)',
       },
     },
   },

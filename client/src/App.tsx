@@ -30,16 +30,28 @@ import QRScan from "@/pages/qr-scan";
 import EarlyDeterioration from "@/pages/early-deterioration";
 import MedicationSafety from "@/pages/medication-safety";
 import LabTrends from "@/pages/lab-trends";
+import LandingPage from "@/pages/landing";
+import SolutionsPage from "@/pages/solutions";
+import PricingPage from "@/pages/pricing";
+import AboutPage from "@/pages/about";
+import BlogPage from "@/pages/blog";
+import ContactPage from "@/pages/contact";
 
 function Router() {
   return (
     <Switch>
-      {/* Public routes - Login and Signup pages (no sidebar) */}
+      {/* Public routes - Marketing and Auth pages (no sidebar) */}
+      <Route path="/" component={LandingPage} />
+      <Route path="/solutions" component={SolutionsPage} />
+      <Route path="/pricing" component={PricingPage} />
+      <Route path="/about" component={AboutPage} />
+      <Route path="/blog" component={BlogPage} />
+      <Route path="/contact" component={ContactPage} />
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
 
       {/* Protected routes - Require authentication */}
-      <Route path="/">
+      <Route path="/dashboard">
         <ProtectedRoute>
           <Dashboard />
         </ProtectedRoute>
@@ -132,15 +144,16 @@ function Router() {
 // Wrapper to conditionally render sidebar based on route
 function AppContent() {
   const [location] = useLocation();
-  const isAuthPage = location === "/login" || location === "/signup";
+  // Public pages: Landing, Solutions, Pricing, About, Blog, Contact, Login, Signup (no sidebar)
+  const isPublicPage = location === "/" || location === "/solutions" || location === "/pricing" || location === "/about" || location === "/blog" || location === "/contact" || location === "/login" || location === "/signup";
 
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
   };
 
-  // Auth pages: No sidebar, just the page content
-  if (isAuthPage) {
+  // Public pages: No sidebar, just the page content
+  if (isPublicPage) {
     return <Router />;
   }
 
@@ -167,7 +180,7 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider defaultTheme="light" storageKey="clinical-care-theme">
+          <ThemeProvider defaultTheme="dark" storageKey="clinical-care-theme">
             <TooltipProvider>
               <AppContent />
               <Toaster />

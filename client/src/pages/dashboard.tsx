@@ -5,7 +5,6 @@ import {
   VscWarning,
   VscPass,
   VscHistory,
-  VscGraph,
   VscPulse,
   VscCircuitBoard,
   VscFile,
@@ -15,10 +14,9 @@ import {
   VscArrowRight,
 } from "react-icons/vsc";
 import { IconType } from "react-icons";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
@@ -31,16 +29,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { HeartPulse, TrendingUp, Activity, AlertTriangle, Stethoscope, Users, Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { SEO, pageSEO } from "@/components/seo";
 
-const agentInfo: Record<AgentType, { name: string; role: string; icon: IconType; color: string }> = {
-  "patient-context": { name: "Patient Context", role: "History & Vitals Analysis", icon: VscOrganization, color: "text-blue-600" },
-  "labs-reports": { name: "Labs & Reports", role: "Pathology & Imaging", icon: VscBeaker, color: "text-teal-600" },
-  "research-guidelines": { name: "Research", role: "Guidelines & Protocols", icon: VscFile, color: "text-purple-600" },
-  "risk-safety": { name: "Risk & Safety", role: "Contraindications Check", icon: VscShield, color: "text-red-600" },
-  "clinician-interaction": { name: "Clinician", role: "Interaction Interface", icon: VscComment, color: "text-orange-600" },
-  "orchestrator": { name: "Orchestrator", role: "Workflow Management", icon: VscCircuitBoard, color: "text-primary" },
+// 🔥 ELITE: Enhanced agent info with vibrant accent colors
+const agentInfo: Record<AgentType, { name: string; role: string; icon: IconType; color: string; bgColor: string }> = {
+  "patient-context": { name: "Patient Context", role: "History & Vitals", icon: VscOrganization, color: "text-sky-400", bgColor: "bg-sky-500/10" },
+  "labs-reports": { name: "Labs & Reports", role: "Pathology Analysis", icon: VscBeaker, color: "text-cyan-400", bgColor: "bg-cyan-500/10" },
+  "research-guidelines": { name: "Research", role: "Clinical Guidelines", icon: VscFile, color: "text-blue-400", bgColor: "bg-blue-500/10" },
+  "risk-safety": { name: "Risk & Safety", role: "Safety Checks", icon: VscShield, color: "text-rose-400", bgColor: "bg-rose-500/10" },
+  "clinician-interaction": { name: "Clinician", role: "Human Interface", icon: VscComment, color: "text-amber-400", bgColor: "bg-amber-500/10" },
+  "orchestrator": { name: "Orchestrator", role: "AI Coordinator", icon: VscCircuitBoard, color: "text-primary", bgColor: "bg-primary/10" },
 };
 
+// 🔥 ELITE: StatCard with accent colors, animations, and commanding presence
 function StatCard({
   title,
   value,
@@ -48,6 +51,8 @@ function StatCard({
   trend,
   loading,
   href,
+  accentColor = "primary",
+  delay = 0,
 }: {
   title: string;
   value: number | string;
@@ -55,17 +60,26 @@ function StatCard({
   trend?: string;
   loading?: boolean;
   href?: string;
+  accentColor?: "primary" | "accent" | "green" | "red";
+  delay?: number;
 }) {
+  const colorClasses = {
+    primary: "bg-primary/10 text-primary border-primary/20 group-hover:bg-primary/20",
+    accent: "bg-teal-500/10 text-teal-400 border-teal-500/20 group-hover:bg-teal-500/20",
+    green: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 group-hover:bg-emerald-500/20",
+    red: "bg-rose-500/10 text-rose-400 border-rose-500/20 group-hover:bg-rose-500/20",
+  };
+
   if (loading) {
     return (
-      <Card className="rounded-sm shadow-sm border-border/50">
-        <CardContent className="p-4">
+      <Card className="rounded-2xl">
+        <CardContent className="p-5">
           <div className="flex justify-between items-start">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-8 w-12" />
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-24 shimmer" />
+              <Skeleton className="h-10 w-16 shimmer" />
             </div>
-            <Skeleton className="h-8 w-8 rounded" />
+            <Skeleton className="h-12 w-12 rounded-xl shimmer" />
           </div>
         </CardContent>
       </Card>
@@ -73,17 +87,25 @@ function StatCard({
   }
 
   const Content = (
-    <Card className={`rounded-md shadow-sm border-border/50 h-full transition-all duration-200 ${href ? "hover:border-primary/50 hover:bg-muted/10 cursor-pointer" : ""}`}>
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start mb-3">
-          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
-          <Icon className="h-5 w-5 text-muted-foreground" />
+    <Card className={cn(
+      "rounded-2xl h-full card-hover-subtle group opacity-0 animate-slideUp",
+      href && "cursor-pointer"
+    )} style={{ animationDelay: `${delay}ms`, animationFillMode: 'forwards' }}>
+      <CardContent className="p-5">
+        <div className="flex justify-between items-start mb-4">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
+          <div className={cn(
+            "flex h-12 w-12 items-center justify-center rounded-xl border transition-all duration-300",
+            colorClasses[accentColor]
+          )}>
+            <Icon className="h-6 w-6" />
+          </div>
         </div>
         <div className="flex items-baseline gap-3">
           <h3 className="text-4xl font-bold tracking-tight" data-testid={`stat-${title.toLowerCase().replace(/\s+/g, '-')}`}>{value}</h3>
           {trend && (
-            <span className="text-sm font-medium text-green-600 flex items-center gap-0.5">
-              <VscGraph className="h-4 w-4" />
+            <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+              <TrendingUp className="h-3 w-3" />
               {trend}
             </span>
           )}
@@ -99,6 +121,7 @@ function StatCard({
   return Content;
 }
 
+// 🔥 ELITE: AgentStatusGrid with card-lift, status-pulse, and progressive disclosure
 function AgentStatusGrid({ loading }: { loading?: boolean }) {
   const agents: AgentType[] = [
     "orchestrator",
@@ -122,7 +145,7 @@ function AgentStatusGrid({ loading }: { loading?: boolean }) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {agents.map((_, i) => (
-          <Skeleton key={i} className="h-32 w-full rounded-sm" />
+          <Skeleton key={i} className="h-40 w-full rounded-2xl shimmer" />
         ))}
       </div>
     );
@@ -130,51 +153,91 @@ function AgentStatusGrid({ loading }: { loading?: boolean }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-      {agents.map((agentType) => {
+      {agents.map((agentType, index) => {
         const info = agentInfo[agentType];
         const Icon = info.icon;
         const href = agentLinks[agentType];
-
-        // Mock operational data
         const isRunning = agentType === "orchestrator";
         const lastExec = new Date();
         lastExec.setMinutes(lastExec.getMinutes() - Math.floor(Math.random() * 60));
+        const evidenceCount = Math.floor(Math.random() * 20) + 5;
+        const confidence = (85 + Math.random() * 14).toFixed(1);
 
         return (
-          <Link key={agentType} href={href}>
-            <div className="group relative overflow-hidden rounded-md border border-border/50 bg-card p-5 hover:border-primary/50 hover:shadow-md transition-all duration-200 cursor-pointer h-full">
-              <div className="flex items-start justify-between mb-5">
-                <div className="flex items-center gap-4">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-md bg-muted/50 group-hover:bg-primary/10 transition-colors`}>
-                    <Icon className={`h-5 w-5 ${info.color}`} />
+          <div
+            key={agentType}
+            className="opacity-0 animate-slideUp"
+            style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'forwards' }}
+          >
+            <Link href={href}>
+              <div className={cn(
+                "group relative overflow-hidden rounded-2xl border border-border/50 bg-card/90 backdrop-blur-xl p-5",
+                "card-lift cursor-pointer h-full",
+                isRunning && "border-emerald-500/30"
+              )}>
+                {/* 🔥 Warmth gradient background on hover */}
+                <div className="absolute inset-0 warmth-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                {/* 🔥 Status indicator glow for running */}
+                {isRunning && (
+                  <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-emerald-500 running-glow" />
+                )}
+
+                <div className="relative flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 border border-border/50",
+                      info.bgColor,
+                      "group-hover:scale-110 group-hover:shadow-lg"
+                    )}>
+                      <Icon className={cn("h-5 w-5 transition-all", info.color)} />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-base leading-none mb-1.5 group-hover:text-primary transition-colors">{info.name}</h4>
+                      <p className="text-xs text-muted-foreground tracking-wide">{info.role}</p>
+                    </div>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-[10px] h-6 px-2.5 gap-1.5 rounded-full font-semibold transition-all",
+                      isRunning
+                        ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/10"
+                        : "text-muted-foreground border-border/50"
+                    )}
+                  >
+                    <span className={cn(
+                      "w-2 h-2 rounded-full",
+                      isRunning ? "bg-emerald-500 status-pulse" : "bg-gray-500"
+                    )} />
+                    {isRunning ? "Running" : "Ready"}
+                  </Badge>
+                </div>
+
+                {/* Core metrics - always visible */}
+                <div className="relative grid grid-cols-2 gap-4 py-3 border-t border-border/40">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground font-medium mb-1">Last Run</p>
+                    <p className="text-sm font-mono text-foreground">{lastExec.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-base leading-none mb-1.5">{info.name}</h4>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">{info.role}</p>
+                    <p className="text-[10px] text-muted-foreground font-medium mb-1">Confidence</p>
+                    <p className="text-sm font-mono text-emerald-400 font-semibold">{confidence}%</p>
                   </div>
                 </div>
-                <Badge variant="outline" className={`text-xs h-6 px-2 gap-1.5 ${isRunning ? "border-green-500/30 text-green-600 bg-green-500/5" : "text-muted-foreground"}`}>
-                  <span className={`w-2 h-2 rounded-full ${isRunning ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
-                  {isRunning ? "Running" : "Ready"}
-                </Badge>
-              </div>
 
-              <div className="grid grid-cols-3 gap-4 py-3 border-t border-border/40">
-                <div>
-                  <p className="text-xs text-muted-foreground font-medium mb-1">Last Run</p>
-                  <p className="text-sm font-mono">{lastExec.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground font-medium mb-1">Evidence</p>
-                  <p className="text-sm font-mono">{Math.floor(Math.random() * 20) + 5}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground font-medium mb-1">Confidence</p>
-                  <p className="text-sm font-mono text-green-600 font-semibold">{(85 + Math.random() * 14).toFixed(1)}%</p>
+                {/* 🔥 PROGRESSIVE DISCLOSURE: Evidence count on hover */}
+                <div className="overflow-hidden transition-all duration-300 max-h-0 group-hover:max-h-20 opacity-0 group-hover:opacity-100">
+                  <div className="pt-3 border-t border-border/40">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Evidence sources</span>
+                      <span className="font-mono text-primary font-semibold">{evidenceCount} items</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+          </div>
         );
       })}
     </div>
@@ -324,128 +387,179 @@ export default function Dashboard() {
   const alertsLoading = casesLoading; // Alerts loading tied to cases loading
 
   return (
-    <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
-      <div className="flex items-center justify-between gap-4 border-b pb-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Clinical Dashboard</h1>
-          <p className="text-xs text-muted-foreground mt-1">Overview of active cases and system status</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground mr-2">Last updated: {new Date().toLocaleTimeString()}</span>
-          <Button asChild size="sm" className="h-9 px-4 text-sm">
-            <Link href="/cases/new">
-              <VscFolderOpened className="h-4 w-4 mr-2" />
-              New Case
-            </Link>
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Cases"
-          value={stats?.totalCases ?? 0}
-          icon={VscFolderOpened}
-          trend="+12%"
-          loading={statsLoading}
-          href="/cases"
-        />
-        <StatCard
-          title="Active Cases"
-          value={stats?.activeCases ?? 0}
-          icon={VscPulse}
-          loading={statsLoading}
-          href="/cases?status=active"
-        />
-        <StatCard
-          title="Pending Reviews"
-          value={stats?.pendingReviews ?? 0}
-          icon={VscHistory}
-          loading={statsLoading}
-          href="/cases?status=review-ready"
-        />
-        <StatCard
-          title="Critical Alerts"
-          value={stats?.criticalAlerts ?? 0}
-          icon={VscWarning}
-          loading={statsLoading}
-          href="/risk-safety"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Agent Orchestration</h2>
-              <Badge variant="outline" className="text-xs h-6 px-2 bg-background">
-                <span className="w-2 h-2 rounded-full bg-green-500 mr-1.5" />
-                System Healthy
-              </Badge>
-            </div>
-            <AgentStatusGrid loading={statsLoading} />
-          </section>
-
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Recent Cases</h2>
-              <Button variant="ghost" size="sm" asChild className="h-auto p-0 text-sm hover:bg-transparent hover:underline text-primary font-medium">
-                <Link href="/cases">View All Cases</Link>
-              </Button>
-            </div>
-            <RecentCasesList cases={recentCases} loading={casesLoading} />
-          </section>
-        </div>
-
-        <div className="space-y-6">
-          <Card className="rounded-sm shadow-sm border-border/50">
-            <CardHeader className="pb-3 border-b border-border/40">
-              <CardTitle className="text-sm font-semibold">Risk & Safety Alerts</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-3">
-              <AlertsList alerts={allAlerts} loading={alertsLoading} />
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-sm shadow-sm border-border/50">
-            <CardHeader className="pb-3 border-b border-border/40">
-              <CardTitle className="text-sm font-semibold">AI Confidence Metrics</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-muted-foreground">Average Confidence</span>
-                  <span className="text-sm font-mono font-medium">{stats?.avgConfidenceScore ?? 0}%</span>
-                </div>
-                <Progress value={stats?.avgConfidenceScore ?? 0} className="h-1.5" />
+    <>
+      <SEO {...pageSEO.dashboard} />
+      <div className="p-6 space-y-8 max-w-[1600px] mx-auto">
+        {/* 🔥 ELITE: Header with human warmth messaging */}
+        <div className="flex items-center justify-between gap-4 opacity-0 animate-fadeIn" style={{ animationFillMode: 'forwards' }}>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
+                <HeartPulse className="h-5 w-5 text-primary" />
               </div>
+              Clinical Dashboard
+            </h1>
+            <p className="text-sm text-muted-foreground mt-2 flex items-center gap-2">
+              <Users className="h-3.5 w-3.5" />
+              Caring for patients with intelligent support
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground px-4 py-2 rounded-xl bg-muted/30 border border-border/50">
+              <Clock className="h-3.5 w-3.5" />
+              <span>Updated {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+            {/* 🔥 COMMANDING CTA with glow */}
+            <Button asChild size="lg" className="glow-cta">
+              <Link href="/cases/new">
+                <Stethoscope className="h-4 w-4 mr-2" />
+                New Case
+              </Link>
+            </Button>
+          </div>
+        </div>
 
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2 bg-muted/30 rounded border border-border/50">
-                  <span className="text-muted-foreground block mb-1">High Confidence</span>
-                  <span className="font-semibold text-green-600">80-100%</span>
-                </div>
-                <div className="p-2 bg-muted/30 rounded border border-border/50">
-                  <span className="text-muted-foreground block mb-1">Med Confidence</span>
-                  <span className="font-semibold text-yellow-600">50-79%</span>
-                </div>
+        {/* 🔥 ELITE: Stats Grid with accent colors */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Total Cases"
+            value={stats?.totalCases ?? 0}
+            icon={VscFolderOpened}
+            trend="+12%"
+            loading={statsLoading}
+            href="/cases"
+            accentColor="primary"
+            delay={0}
+          />
+          <StatCard
+            title="Active Cases"
+            value={stats?.activeCases ?? 0}
+            icon={VscPulse}
+            loading={statsLoading}
+            href="/cases?status=active"
+            accentColor="green"
+            delay={50}
+          />
+          <StatCard
+            title="Pending Reviews"
+            value={stats?.pendingReviews ?? 0}
+            icon={VscHistory}
+            loading={statsLoading}
+            href="/cases?status=review-ready"
+            accentColor="accent"
+            delay={100}
+          />
+          <StatCard
+            title="Critical Alerts"
+            value={stats?.criticalAlerts ?? 0}
+            icon={VscWarning}
+            loading={statsLoading}
+            href="/risk-safety"
+            accentColor="red"
+            delay={150}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            {/* 🔥 ELITE: Agent Orchestration section */}
+            <section className="opacity-0 animate-fadeIn" style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <VscCircuitBoard className="h-5 w-5 text-primary" />
+                  Agent Orchestration
+                </h2>
+                <Badge variant="outline" className="text-xs h-7 px-3 gap-2 rounded-full border-emerald-500/30 text-emerald-400 bg-emerald-500/10">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 status-pulse" />
+                  System Healthy
+                </Badge>
               </div>
-            </CardContent>
-          </Card>
+              <AgentStatusGrid loading={statsLoading} />
+            </section>
 
-          <div className="p-3 rounded-sm bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30">
-            <div className="flex gap-2">
-              <VscWarning className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">Clinical Decision Support</p>
-                <p className="text-[10px] text-blue-600/80 dark:text-blue-400/80 leading-relaxed">
-                  AI outputs are for decision support only. Verify all recommendations against clinical protocols.
-                </p>
+            {/* 🔥 ELITE: Recent Cases section */}
+            <section className="opacity-0 animate-fadeIn" style={{ animationDelay: '300ms', animationFillMode: 'forwards' }}>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <VscFolderOpened className="h-5 w-5 text-primary" />
+                  Recent Cases
+                </h2>
+                <Button variant="ghost" size="sm" asChild className="text-primary hover:bg-primary/10 rounded-lg">
+                  <Link href="/cases">View All</Link>
+                </Button>
+              </div>
+              <RecentCasesList cases={recentCases} loading={casesLoading} />
+            </section>
+          </div>
+
+          {/* 🔥 ELITE: Right Sidebar with animations */}
+          <div className="space-y-6">
+            {/* Risk & Safety Alerts */}
+            <Card className="rounded-2xl opacity-0 animate-fadeIn" style={{ animationDelay: '250ms', animationFillMode: 'forwards' }}>
+              <CardHeader className="pb-4 border-b border-border/40">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <VscWarning className="h-4 w-4 text-amber-500" />
+                  Risk & Safety
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <AlertsList alerts={allAlerts} loading={alertsLoading} />
+              </CardContent>
+            </Card>
+
+            {/* AI Confidence with gradient progress */}
+            <Card className="rounded-2xl opacity-0 animate-fadeIn" style={{ animationDelay: '350ms', animationFillMode: 'forwards' }}>
+              <CardHeader className="pb-4 border-b border-border/40">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-primary" />
+                  AI Confidence
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-5 space-y-5">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-muted-foreground">Average Score</span>
+                    <span className="text-2xl font-bold font-mono text-primary">{stats?.avgConfidenceScore ?? 0}%</span>
+                  </div>
+                  {/* 🔥 Custom gradient progress bar */}
+                  <div className="h-2.5 bg-muted/50 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-primary to-sky-400 rounded-full transition-all duration-700 ease-out"
+                      style={{ width: `${stats?.avgConfidenceScore ?? 0}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20 card-hover-subtle">
+                    <span className="text-muted-foreground block mb-1">High</span>
+                    <span className="font-semibold text-emerald-400 text-sm">80-100%</span>
+                  </div>
+                  <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20 card-hover-subtle">
+                    <span className="text-muted-foreground block mb-1">Medium</span>
+                    <span className="font-semibold text-amber-400 text-sm">50-79%</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 🔥 HUMAN WARMTH: Patient-centric disclaimer */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/5 to-teal-500/5 border border-primary/20 opacity-0 animate-fadeIn" style={{ animationDelay: '400ms', animationFillMode: 'forwards' }}>
+              <div className="flex gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+                  <HeartPulse className="h-5 w-5 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-primary">Patient-Centered Care</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    AI supports clinicians in making informed decisions. Always prioritize patient well-being.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
