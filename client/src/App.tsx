@@ -37,6 +37,8 @@ import AboutPage from "@/pages/about";
 import BlogPage from "@/pages/blog";
 import BlogPostPage from "@/pages/blog-post";
 import ContactPage from "@/pages/contact";
+import PrivacyPolicy from "@/pages/privacy";
+import TermsOfService from "@/pages/terms";
 
 function Router() {
   return (
@@ -49,6 +51,8 @@ function Router() {
       <Route path="/blog" component={BlogPage} />
       <Route path="/blog/:slug" component={BlogPostPage} />
       <Route path="/contact" component={ContactPage} />
+      <Route path="/privacy" component={PrivacyPolicy} />
+      <Route path="/terms" component={TermsOfService} />
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
 
@@ -146,8 +150,8 @@ function Router() {
 // Wrapper to conditionally render sidebar based on route
 function AppContent() {
   const [location] = useLocation();
-  // Public pages: Landing, Solutions, Pricing, About, Blog, Contact, Login, Signup (no sidebar)
-  const isPublicPage = location === "/" || location.startsWith("/solutions") || location.startsWith("/pricing") || location.startsWith("/about") || location.startsWith("/blog") || location.startsWith("/contact") || location === "/login" || location === "/signup";
+  // Public pages: Landing, Solutions, Pricing, About, Blog, Contact, Privacy, Terms, Login, Signup (no sidebar)
+  const isPublicPage = location === "/" || location.startsWith("/solutions") || location.startsWith("/pricing") || location.startsWith("/about") || location.startsWith("/blog") || location.startsWith("/contact") || location === "/privacy" || location === "/terms" || location === "/login" || location === "/signup";
 
   const style = {
     "--sidebar-width": "16rem",
