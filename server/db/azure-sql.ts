@@ -10,7 +10,8 @@
 
 import sql from "mssql";
 
-const AZURE_SQL_CONNECTION_STRING = process.env.AZURE_SQL_CONNECTION_STRING || "";
+// Support both AZURE_SQL_CONNECTION_STRING and DATABASE_URL for flexibility
+const AZURE_SQL_CONNECTION_STRING = process.env.AZURE_SQL_CONNECTION_STRING || process.env.DATABASE_URL || "";
 
 // Retry configuration for Azure SQL Serverless cold starts
 const MAX_RETRIES = 5;
@@ -78,9 +79,9 @@ function sleep(ms: number): Promise<void> {
 function isRetryableError(error: any): boolean {
     const message = error?.message?.toLowerCase() || "";
     const code = error?.code?.toLowerCase() || "";
-    
+
     // Azure SQL Serverless cold start errors
-    if (message.includes("connection is closed") || 
+    if (message.includes("connection is closed") ||
         message.includes("not open") ||
         message.includes("econnreset") ||
         message.includes("econnrefused") ||
@@ -141,24 +142,24 @@ async function connectWithRetry(): Promise<sql.ConnectionPool> {
         try {
             // Close existing broken pool if any
             if (pool) {
-                try { 
-                    await pool.close(); 
-                } catch (e) { 
+                try {
+                    await pool.close();
+                } catch (e) {
                     // Ignore close errors 
                 }
                 pool = null;
             }
 
             console.log(`🔌 [SQL] Connecting to Azure SQL (Attempt ${attempt}/${MAX_RETRIES})...`);
-            
+
             const newPool = await sql.connect(azureConfig!);
-            
+
             // Verify connection with a simple query
             await newPool.request().query("SELECT 1 as connected");
-            
+
             console.log("✅ [SQL] Azure SQL connection pool established successfully");
             return newPool;
-            
+
         } catch (error: any) {
             lastError = error;
             console.warn(`⚠️ [SQL] Connection attempt ${attempt} failed: ${error.message}`);
@@ -166,7 +167,7 @@ async function connectWithRetry(): Promise<sql.ConnectionPool> {
             if (attempt < MAX_RETRIES && isRetryableError(error)) {
                 console.log(`⏳ [SQL] Retrying in ${delay}ms... (Azure SQL Serverless may be waking up)`);
                 await sleep(delay);
-                
+
                 // Exponential backoff with cap
                 delay = Math.min(delay * 1.5, MAX_RETRY_DELAY);
             }
