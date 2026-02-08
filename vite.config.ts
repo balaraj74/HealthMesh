@@ -22,6 +22,10 @@ export default defineConfig({
     sourcemap: !isProduction,
     // Target modern browsers for smaller bundles
     target: "es2020",
+    // Minification settings for smaller bundle size
+    minify: isProduction ? "esbuild" : false,
+    // CSS code splitting for better performance
+    cssCodeSplit: true,
     // Optimize chunk splitting
     rollupOptions: {
       output: {
@@ -36,9 +40,19 @@ export default defineConfig({
             "@radix-ui/react-tooltip",
             "@radix-ui/react-select",
           ],
+          // Separate router for smaller initial bundle
+          "router": ["wouter"],
+          // Separate query client
+          "query": ["@tanstack/react-query"],
         },
+        // Use hashed filenames for cache busting
+        entryFileNames: isProduction ? "assets/[name]-[hash].js" : "assets/[name].js",
+        chunkFileNames: isProduction ? "assets/[name]-[hash].js" : "assets/[name].js",
+        assetFileNames: isProduction ? "assets/[name]-[hash].[ext]" : "assets/[name].[ext]",
       },
     },
+    // Report compressed size for better insights
+    reportCompressedSize: true,
     // Reduce chunk size warnings threshold
     chunkSizeWarningLimit: 1000,
   },
