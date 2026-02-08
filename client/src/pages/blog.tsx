@@ -248,9 +248,11 @@ export default function BlogPage() {
                                                 {post.date}
                                             </span>
                                         </div>
-                                        <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors line-clamp-2">
-                                            {post.title}
-                                        </h3>
+                                        <Link href={`/blog/${post.slug}`}>
+                                            <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors line-clamp-2 cursor-pointer">
+                                                {post.title}
+                                            </h3>
+                                        </Link>
                                         <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
                                             {post.excerpt}
                                         </p>
@@ -264,9 +266,11 @@ export default function BlogPage() {
                                                     <p className="text-xs text-muted-foreground">{post.readTime}</p>
                                                 </div>
                                             </div>
-                                            <Button variant="ghost" size="sm" className="group-hover:text-primary">
-                                                Read More
-                                                <ArrowRight className="ml-1 h-4 w-4" />
+                                            <Button variant="ghost" size="sm" className="group-hover:text-primary" asChild>
+                                                <Link href={`/blog/${post.slug}`}>
+                                                    Read More
+                                                    <ArrowRight className="ml-1 h-4 w-4" />
+                                                </Link>
                                             </Button>
                                         </div>
                                     </CardContent>
@@ -291,9 +295,11 @@ export default function BlogPage() {
                                         <div className="flex items-center gap-3 mb-3">
                                             <CategoryBadge category={post.category} />
                                         </div>
-                                        <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                                            {post.title}
-                                        </h3>
+                                        <Link href={`/blog/${post.slug}`}>
+                                            <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors line-clamp-2 cursor-pointer">
+                                                {post.title}
+                                            </h3>
+                                        </Link>
                                         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                                             {post.excerpt}
                                         </p>

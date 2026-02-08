@@ -35,6 +35,7 @@ import SolutionsPage from "@/pages/solutions";
 import PricingPage from "@/pages/pricing";
 import AboutPage from "@/pages/about";
 import BlogPage from "@/pages/blog";
+import BlogPostPage from "@/pages/blog-post";
 import ContactPage from "@/pages/contact";
 
 function Router() {
@@ -46,6 +47,7 @@ function Router() {
       <Route path="/pricing" component={PricingPage} />
       <Route path="/about" component={AboutPage} />
       <Route path="/blog" component={BlogPage} />
+      <Route path="/blog/:slug" component={BlogPostPage} />
       <Route path="/contact" component={ContactPage} />
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
@@ -145,7 +147,7 @@ function Router() {
 function AppContent() {
   const [location] = useLocation();
   // Public pages: Landing, Solutions, Pricing, About, Blog, Contact, Login, Signup (no sidebar)
-  const isPublicPage = location === "/" || location === "/solutions" || location === "/pricing" || location === "/about" || location === "/blog" || location === "/contact" || location === "/login" || location === "/signup";
+  const isPublicPage = location === "/" || location.startsWith("/solutions") || location.startsWith("/pricing") || location.startsWith("/about") || location.startsWith("/blog") || location.startsWith("/contact") || location === "/login" || location === "/signup";
 
   const style = {
     "--sidebar-width": "16rem",

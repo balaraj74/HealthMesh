@@ -5,11 +5,13 @@
  * Public page - indexed by search engines
  */
 
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SEO } from "@/components/seo";
+import { useToast } from "@/hooks/use-toast";
 import {
     HeartPulse,
     ArrowRight,
@@ -23,6 +25,7 @@ import {
     Users,
     HelpCircle,
     BookOpen,
+    Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -77,6 +80,25 @@ const offices = [
 ];
 
 export default function ContactPage() {
+    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        toast({
+            title: "Message Sent Successfully!",
+            description: "Thank you for contacting HealthMesh. We'll get back to you shortly.",
+        });
+
+        setIsSubmitting(false);
+        (e.target as HTMLFormElement).reset();
+    };
+
     return (
         <>
             <SEO
@@ -197,12 +219,13 @@ export default function ContactPage() {
                                 </p>
                             </CardHeader>
                             <CardContent className="p-8">
-                                <form className="space-y-6">
+                                <form className="space-y-6" onSubmit={handleSubmit}>
                                     <div className="grid md:grid-cols-2 gap-6">
                                         <div>
                                             <label className="block text-sm font-medium mb-2">First Name *</label>
                                             <input
                                                 type="text"
+                                                required
                                                 className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:outline-none"
                                                 placeholder="John"
                                             />
@@ -211,6 +234,7 @@ export default function ContactPage() {
                                             <label className="block text-sm font-medium mb-2">Last Name *</label>
                                             <input
                                                 type="text"
+                                                required
                                                 className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:outline-none"
                                                 placeholder="Doe"
                                             />
@@ -221,6 +245,7 @@ export default function ContactPage() {
                                             <label className="block text-sm font-medium mb-2">Work Email *</label>
                                             <input
                                                 type="email"
+                                                required
                                                 className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:outline-none"
                                                 placeholder="john.doe@hospital.org"
                                             />
@@ -239,6 +264,7 @@ export default function ContactPage() {
                                             <label className="block text-sm font-medium mb-2">Organization *</label>
                                             <input
                                                 type="text"
+                                                required
                                                 className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:outline-none"
                                                 placeholder="Hospital Name"
                                             />
@@ -261,6 +287,7 @@ export default function ContactPage() {
                                     <div>
                                         <label className="block text-sm font-medium mb-2">Inquiry Type *</label>
                                         <select
+                                            required
                                             className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:outline-none"
                                         >
                                             <option value="">Select inquiry type</option>
@@ -275,6 +302,7 @@ export default function ContactPage() {
                                     <div>
                                         <label className="block text-sm font-medium mb-2">Message *</label>
                                         <textarea
+                                            required
                                             rows={5}
                                             className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:outline-none resize-none"
                                             placeholder="Tell us about your needs and how we can help..."
@@ -283,6 +311,7 @@ export default function ContactPage() {
                                     <div className="flex items-start gap-2">
                                         <input
                                             type="checkbox"
+                                            required
                                             id="consent"
                                             className="mt-1"
                                         />
@@ -290,9 +319,18 @@ export default function ContactPage() {
                                             I agree to receive communications from HealthMesh. We respect your privacy and will never share your information.
                                         </label>
                                     </div>
-                                    <Button size="lg" className="w-full glow-cta text-lg py-6">
-                                        Send Message
-                                        <ArrowRight className="ml-2 h-5 w-5" />
+                                    <Button size="lg" className="w-full glow-cta text-lg py-6" disabled={isSubmitting}>
+                                        {isSubmitting ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                                Sending...
+                                            </>
+                                        ) : (
+                                            <>
+                                                Send Message
+                                                <ArrowRight className="ml-2 h-5 w-5" />
+                                            </>
+                                        )}
                                     </Button>
                                 </form>
                             </CardContent>
