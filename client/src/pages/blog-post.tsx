@@ -21,100 +21,18 @@ import {
     Facebook,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BLOG_POSTS } from "@/data/blog-posts";
 import NotFound from "./not-found";
-
-// Shared data (duplicated from blog.tsx for now)
-const allPosts = [
-    {
-        slug: "understanding-clinical-decision-support-systems",
-        title: "Understanding Clinical Decision Support Systems: A Complete Guide for 2026",
-        content: `
-            <p class="mb-4">Clinical Decision Support Systems (CDSS) have evolved significantly over the past decade. In 2026, they are no longer just alert-generating engines but sophisticated AI partners that integrate seamlessly into clinical workflows.</p>
-            
-            <h2 class="text-2xl font-bold mt-8 mb-4">The Evolution of CDSS</h2>
-            <p class="mb-4">Traditional CDSS relied on rule-based logic: "IF patient is on Warfarin AND prescribed Aspirin THEN alert." While useful, this approach led to significant alert fatigue, with clinicians overriding up to 90% of alerts.</p>
-            <p class="mb-4">Modern AI-driven CDSS, like HealthMesh, uses machine learning to understand context. It considers the patient's full history, current lab values, and specific clinical nuances before making a recommendation.</p>
-
-            <h2 class="text-2xl font-bold mt-8 mb-4">Key Benefits of AI-Powered CDSS</h2>
-            <ul class="list-disc pl-6 mb-4 space-y-2">
-                <li><strong>Reduced Diagnostic Errors:</strong> AI can identify subtle patterns in lab tests and vitals that humans might miss in a busy setting.</li>
-                <li><strong>Personalized Treatment Plans:</strong> Recommendations are tailored to the individual patient's genetic profile and history.</li>
-                <li><strong>Workflow Efficiency:</strong> By automating routine checks, clinicians can focus on complex decision-making.</li>
-            </ul>
-
-            <h2 class="text-2xl font-bold mt-8 mb-4">Implementing CDSS Successfully</h2>
-            <p class="mb-4">Success depends not just on the technology, but on how it's integrated. "The best AI is the one you don't notice until you need it," says Dr. Sarah Chen, our CMO.</p>
-            
-            <blockquote class="border-l-4 border-primary pl-4 italic my-6 text-xl text-muted-foreground">
-                "We must move from 'alerting' to 'advising'. The goal is to be a copilot, not a backseat driver."
-            </blockquote>
-
-            <p class="mb-4">As we look to the future, the integration of generative AI will allow for even more natural interactions, where clinicians can ask complex questions and receive evidence-based answers in seconds.</p>
-        `,
-        excerpt: "Learn how modern CDSS platforms leverage AI to enhance clinical decision-making, reduce medical errors, and improve patient outcomes in healthcare settings.",
-        category: "Clinical AI",
-        author: "Dr. Sarah Chen",
-        authorRole: "Chief Medical Officer",
-        date: "February 5, 2026",
-        readTime: "12 min read",
-    },
-    {
-        slug: "reducing-adverse-drug-events-with-ai",
-        title: "How AI is Reducing Adverse Drug Events by 60%",
-        content: `
-            <p class="mb-4">Adverse Drug Events (ADEs) remain a leading cause of preventable harm in healthcare. However, new AI capabilities are changing the landscape of medication safety.</p>
-            
-            <h2 class="text-2xl font-bold mt-8 mb-4">The Scope of the Problem</h2>
-            <p class="mb-4">Each year, ADEs account for millions of hospital admissions and billions in excess costs. The complexity of modern pharmacotherapy makes it impossible for any single clinician to memorize every potential interaction.</p>
-
-            <h2 class="text-2xl font-bold mt-8 mb-4">How AI Intervenes</h2>
-            <p class="mb-4">Unlike static databases, AI models can predict risk based on dynamic factors:</p>
-            <ul class="list-disc pl-6 mb-4 space-y-2">
-                <li><strong>Renal Function Changes:</strong> Real-time dose adjustments based on creatine clearance trends.</li>
-                <li><strong>Genetic Factors:</strong> Pharmacogenomic screening integrated into the prescribing workflow.</li>
-                <li><strong>Cumulative Toxicity:</strong> Monitoring the total anticholinergic burden across multiple medications.</li>
-            </ul>
-
-            <p class="mb-4">In recent pilots, HealthMesh's algorithms demonstrated a 60% reduction in serious ADEs by catching meaningful interactions that rule-based systems missed.</p>
-        `,
-        excerpt: "Discover how AI-powered medication safety systems are transforming pharmacy workflows and preventing drug interactions before they happen.",
-        category: "Patient Safety",
-        author: "Dr. Michael Roberts",
-        authorRole: "Clinical Pharmacist",
-        date: "February 2, 2026",
-        readTime: "8 min read",
-    },
-    // Generic fallback for other posts
-    {
-        slug: "default",
-        title: "Detailed Article View",
-        content: `
-            <p class="mb-4">This is a placeholder for the full article content. In a production environment, this content would be fetched from a CMS or database.</p>
-            <p class="mb-4">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-            <h2 class="text-2xl font-bold mt-8 mb-4">Key Takeaways</h2>
-            <p class="mb-4">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-        `,
-        excerpt: "Full article content placeholder.",
-        category: "General",
-        author: "HealthMesh Team",
-        authorRole: "Editor",
-        date: "January 1, 2026",
-        readTime: "5 min read",
-    }
-];
 
 // Helper to find post
 function getPost(slug: string) {
-    const post = allPosts.find(p => p.slug === slug);
+    const post = BLOG_POSTS.find(p => p.slug === slug);
     if (post) return post;
 
-    // Check if it's one of the other slugs from blog.tsx that we didn't fully flesh out above
-    // and return a generic version with the correct slug/title if possible, or just the default
-    return {
-        ...allPosts[2], // use default
-        slug: slug,
-        title: slug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-    };
+    // Fallback not strictly needed if we assume link integrity, 
+    // but useful for direct URL navigation to bad slugs.
+    // However, NotFound component should handle this if we return null.
+    return null;
 }
 
 export default function BlogPostPage() {
@@ -123,6 +41,8 @@ export default function BlogPostPage() {
     if (!match || !params) return <NotFound />;
 
     const post = getPost(params.slug);
+
+    if (!post) return <NotFound />;
 
     return (
         <>

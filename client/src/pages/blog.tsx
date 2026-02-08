@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { BLOG_POSTS } from "@/data/blog-posts";
+
 // Blog categories for filtering
 const categories = [
     { name: "All", slug: "all" },
@@ -34,96 +36,10 @@ const categories = [
 ];
 
 // Featured blog posts
-const featuredPosts = [
-    {
-        slug: "understanding-clinical-decision-support-systems",
-        title: "Understanding Clinical Decision Support Systems: A Complete Guide for 2026",
-        excerpt: "Learn how modern CDSS platforms leverage AI to enhance clinical decision-making, reduce medical errors, and improve patient outcomes in healthcare settings.",
-        category: "Clinical AI",
-        author: "Dr. Sarah Chen",
-        authorRole: "Chief Medical Officer",
-        date: "February 5, 2026",
-        readTime: "12 min read",
-        image: null, // Would be actual image in production
-        featured: true,
-    },
-    {
-        slug: "reducing-adverse-drug-events-with-ai",
-        title: "How AI is Reducing Adverse Drug Events by 60%",
-        excerpt: "Discover how AI-powered medication safety systems are transforming pharmacy workflows and preventing drug interactions before they happen.",
-        category: "Patient Safety",
-        author: "Dr. Michael Roberts",
-        authorRole: "Clinical Pharmacist",
-        date: "February 2, 2026",
-        readTime: "8 min read",
-        image: null,
-        featured: true,
-    },
-];
+const featuredPosts = BLOG_POSTS.filter(post => post.featured);
 
 // Regular blog posts
-const blogPosts = [
-    {
-        slug: "fhir-interoperability-explained",
-        title: "FHIR Interoperability Explained: Connecting Your EHR to AI Systems",
-        excerpt: "A technical deep-dive into FHIR R4 standards and how healthcare organizations can leverage them for seamless AI integration.",
-        category: "Healthcare Technology",
-        author: "James Wilson",
-        authorRole: "Solutions Architect",
-        date: "January 28, 2026",
-        readTime: "10 min read",
-    },
-    {
-        slug: "hipaa-compliance-ai-healthcare",
-        title: "HIPAA Compliance in AI Healthcare: What You Need to Know",
-        excerpt: "Essential guidelines for implementing AI solutions while maintaining full HIPAA compliance and protecting patient data.",
-        category: "Compliance",
-        author: "Lisa Park",
-        authorRole: "Compliance Officer",
-        date: "January 25, 2026",
-        readTime: "7 min read",
-    },
-    {
-        slug: "early-warning-systems-critical-care",
-        title: "Early Warning Systems in Critical Care: Predicting Patient Deterioration",
-        excerpt: "How machine learning models analyze vital signs and lab results to identify at-risk patients hours before clinical deterioration.",
-        category: "Clinical AI",
-        author: "Dr. Sarah Chen",
-        authorRole: "Chief Medical Officer",
-        date: "January 20, 2026",
-        readTime: "9 min read",
-    },
-    {
-        slug: "case-study-community-hospital-ai",
-        title: "Case Study: How Community Hospital Reduced Readmissions by 35%",
-        excerpt: "A real-world implementation story of AI-powered clinical decision support in a 200-bed community hospital.",
-        category: "Case Studies",
-        author: "Rachel Kim",
-        authorRole: "Customer Success",
-        date: "January 15, 2026",
-        readTime: "6 min read",
-    },
-    {
-        slug: "lab-trend-analysis-best-practices",
-        title: "Lab Trend Analysis: Best Practices for Clinical Interpretation",
-        excerpt: "How intelligent lab interpretation systems help clinicians identify concerning patterns and make faster diagnostic decisions.",
-        category: "Clinical AI",
-        author: "Dr. Michael Roberts",
-        authorRole: "Clinical Pharmacist",
-        date: "January 10, 2026",
-        readTime: "8 min read",
-    },
-    {
-        slug: "future-of-healthcare-ai-2026",
-        title: "The Future of Healthcare AI: Trends to Watch in 2026",
-        excerpt: "From generative AI to multi-agent systems, explore the emerging technologies shaping the future of clinical decision support.",
-        category: "Healthcare Technology",
-        author: "James Wilson",
-        authorRole: "Solutions Architect",
-        date: "January 5, 2026",
-        readTime: "11 min read",
-    },
-];
+const blogPosts = BLOG_POSTS.filter(post => !post.featured);
 
 // Category badge component
 function CategoryBadge({ category }: { category: string }) {
