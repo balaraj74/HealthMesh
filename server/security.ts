@@ -71,6 +71,10 @@ export function configureSecurity(app: Express): void {
                         "'unsafe-eval'",   // Required for Vite in development
                         "https://login.microsoftonline.com",
                         "https://alcdn.msauth.net",
+                        // Google Analytics and Tag Manager
+                        "https://www.googletagmanager.com",
+                        "https://www.google-analytics.com",
+                        "https://ssl.google-analytics.com",
                     ],
                     styleSrc: [
                         "'self'",
@@ -87,6 +91,9 @@ export function configureSecurity(app: Express): void {
                         "data:",
                         "blob:",
                         "https:",
+                        // Google Analytics
+                        "https://www.google-analytics.com",
+                        "https://www.googletagmanager.com",
                     ],
                     connectSrc: [
                         "'self'",
@@ -95,6 +102,10 @@ export function configureSecurity(app: Express): void {
                         "https://*.ai.azure.com",
                         "wss://localhost:*",
                         "ws://localhost:*",
+                        // Google Analytics
+                        "https://www.google-analytics.com",
+                        "https://analytics.google.com",
+                        "https://www.googletagmanager.com",
                     ],
                     frameSrc: [
                         "'self'",

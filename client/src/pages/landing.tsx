@@ -137,38 +137,216 @@ export default function LandingPage() {
                     </nav>
                 </header>
 
-                {/* Hero Section */}
-                <section className="pt-32 pb-20 px-6">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="text-center max-w-4xl mx-auto">
-                            {/* Trust badges */}
-                            <div className="flex flex-wrap justify-center gap-2 mb-8 opacity-0 animate-fadeIn" style={{ animationFillMode: 'forwards' }}>
-                                {trustBadges.map((badge, i) => (
-                                    <Badge
-                                        key={badge}
-                                        variant="outline"
-                                        className="text-xs px-3 py-1 rounded-full border-primary/30 text-primary bg-primary/5"
-                                        style={{ animationDelay: `${i * 100}ms` }}
+                {/* Main Content */}
+                <main>
+                    {/* Hero Section */}
+                    <section className="pt-32 pb-20 px-6">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="text-center max-w-4xl mx-auto">
+                                {/* Trust badges */}
+                                <div className="flex flex-wrap justify-center gap-2 mb-8 opacity-0 animate-fadeIn" style={{ animationFillMode: 'forwards' }}>
+                                    {trustBadges.map((badge, i) => (
+                                        <Badge
+                                            key={badge}
+                                            variant="outline"
+                                            className="text-xs px-3 py-1 rounded-full border-primary/30 text-primary bg-primary/5"
+                                            style={{ animationDelay: `${i * 100}ms` }}
+                                        >
+                                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                                            {badge}
+                                        </Badge>
+                                    ))}
+                                </div>
+
+                                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 opacity-0 animate-slideUp" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
+                                    AI-Powered
+                                    <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-sky-400 to-teal-400">
+                                        Clinical Decision Support
+                                    </span>
+                                </h1>
+
+                                <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto opacity-0 animate-slideUp" style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
+                                    Enterprise healthcare AI platform that empowers clinicians with
+                                    <strong className="text-foreground"> explainable, evidence-based recommendations</strong> for safer, faster patient care.
+                                </p>
+
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 opacity-0 animate-slideUp" style={{ animationDelay: '300ms', animationFillMode: 'forwards' }}>
+                                    <Button size="lg" asChild className="glow-cta text-lg px-8 py-6">
+                                        <Link href="/login">
+                                            <Stethoscope className="mr-2 h-5 w-5" />
+                                            Request Demo
+                                        </Link>
+                                    </Button>
+                                    <Button size="lg" variant="outline" asChild className="text-lg px-8 py-6">
+                                        <a href="#features">
+                                            Explore Features
+                                        </a>
+                                    </Button>
+                                </div>
+
+                                {/* Hero visual */}
+                                <div className="mt-16 relative opacity-0 animate-fadeIn" style={{ animationDelay: '400ms', animationFillMode: 'forwards' }}>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10" />
+                                    <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-xl p-2 shadow-2xl">
+                                        <div className="rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 aspect-video flex items-center justify-center">
+                                            <div className="text-center">
+                                                <div className="flex items-center justify-center gap-4 mb-6">
+                                                    <div className="h-16 w-16 rounded-2xl bg-primary/20 flex items-center justify-center">
+                                                        <Brain className="h-8 w-8 text-primary" />
+                                                    </div>
+                                                    <div className="h-12 w-12 rounded-xl bg-teal-500/20 flex items-center justify-center">
+                                                        <Activity className="h-6 w-6 text-teal-400" />
+                                                    </div>
+                                                    <div className="h-12 w-12 rounded-xl bg-rose-500/20 flex items-center justify-center">
+                                                        <Shield className="h-6 w-6 text-rose-400" />
+                                                    </div>
+                                                </div>
+                                                <p className="text-muted-foreground">Interactive Dashboard Preview</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Stats Section */}
+                    <section className="py-16 px-6 border-y border-border/50 bg-muted/20">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                                {stats.map((stat, i) => (
+                                    <div
+                                        key={stat.label}
+                                        className="text-center opacity-0 animate-slideUp"
+                                        style={{ animationDelay: `${i * 100}ms`, animationFillMode: 'forwards' }}
                                     >
-                                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                                        {badge}
-                                    </Badge>
+                                        <stat.icon className="h-8 w-8 text-primary mx-auto mb-3" />
+                                        <div className="text-4xl font-bold text-foreground mb-1">{stat.value}</div>
+                                        <div className="text-sm text-muted-foreground">{stat.label}</div>
+                                    </div>
                                 ))}
                             </div>
+                        </div>
+                    </section>
 
-                            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 opacity-0 animate-slideUp" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
-                                AI-Powered
-                                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-sky-400 to-teal-400">
-                                    Clinical Decision Support
-                                </span>
-                            </h1>
+                    {/* Features Section */}
+                    <section id="features" className="py-24 px-6">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="text-center mb-16">
+                                <Badge variant="outline" className="mb-4 text-primary border-primary/30">
+                                    Platform Features
+                                </Badge>
+                                <h2 className="text-4xl font-bold mb-4">
+                                    Everything You Need for
+                                    <span className="text-primary"> Smarter Clinical Decisions</span>
+                                </h2>
+                                <p className="text-muted-foreground max-w-2xl mx-auto">
+                                    Our multi-agent AI system orchestrates specialized agents to deliver comprehensive clinical insights.
+                                </p>
+                            </div>
 
-                            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto opacity-0 animate-slideUp" style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
-                                Enterprise healthcare AI platform that empowers clinicians with
-                                <strong className="text-foreground"> explainable, evidence-based recommendations</strong> for safer, faster patient care.
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {features.map((feature, i) => (
+                                    <Card
+                                        key={feature.title}
+                                        className="rounded-2xl card-hover-subtle opacity-0 animate-slideUp"
+                                        style={{ animationDelay: `${i * 100}ms`, animationFillMode: 'forwards' }}
+                                    >
+                                        <CardContent className="p-6">
+                                            <div className={cn(
+                                                "flex h-12 w-12 items-center justify-center rounded-xl border border-border/50 mb-4",
+                                                feature.bgColor
+                                            )}>
+                                                <feature.icon className={cn("h-6 w-6", feature.color)} />
+                                            </div>
+                                            <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                                {feature.description}
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Security Section */}
+                    <section id="security" className="py-24 px-6 bg-muted/20">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="grid lg:grid-cols-2 gap-12 items-center">
+                                <div>
+                                    <Badge variant="outline" className="mb-4 text-primary border-primary/30">
+                                        Enterprise Security
+                                    </Badge>
+                                    <h2 className="text-4xl font-bold mb-6">
+                                        Built for Healthcare
+                                        <span className="text-primary"> Compliance</span>
+                                    </h2>
+                                    <p className="text-muted-foreground mb-8">
+                                        HealthMesh is designed from the ground up with healthcare compliance and security in mind.
+                                        Your patient data is protected by enterprise-grade security measures.
+                                    </p>
+
+                                    <div className="space-y-4">
+                                        {[
+                                            { icon: Lock, title: "HIPAA Compliant", desc: "Full compliance with HIPAA Privacy and Security Rules" },
+                                            { icon: Shield, title: "SOC 2 Type II", desc: "Audited security controls and processes" },
+                                            { icon: Award, title: "ISO 27001", desc: "Information security management certification" },
+                                            { icon: Building2, title: "Enterprise SSO", desc: "Microsoft Entra ID integration for secure access" },
+                                        ].map((item, i) => (
+                                            <div key={item.title} className="flex items-start gap-4">
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+                                                    <item.icon className="h-5 w-5 text-primary" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-semibold text-base">{item.title}</h3>
+                                                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-teal-500/20 rounded-3xl blur-3xl" />
+                                    <Card className="relative rounded-3xl">
+                                        <CardContent className="p-8">
+                                            <div className="flex items-center gap-4 mb-6">
+                                                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-sky-400 flex items-center justify-center">
+                                                    <Lock className="h-7 w-7 text-white" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl font-bold">Zero Trust Architecture</h3>
+                                                    <p className="text-sm text-muted-foreground">Enterprise-grade security</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {["End-to-end encryption", "Role-based access control", "Audit logging", "Data anonymization"].map((item) => (
+                                                    <div key={item} className="flex items-center gap-3">
+                                                        <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                                                        <span className="text-sm">{item}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* CTA Section */}
+                    <section className="py-24 px-6">
+                        <div className="max-w-4xl mx-auto text-center">
+                            <h2 className="text-4xl font-bold mb-6">
+                                Ready to Transform Your
+                                <span className="text-primary"> Clinical Workflow?</span>
+                            </h2>
+                            <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+                                Join leading healthcare organizations using HealthMesh to improve patient outcomes
+                                and support clinical decision-making with AI.
                             </p>
-
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 opacity-0 animate-slideUp" style={{ animationDelay: '300ms', animationFillMode: 'forwards' }}>
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                                 <Button size="lg" asChild className="glow-cta text-lg px-8 py-6">
                                     <Link href="/login">
                                         <Stethoscope className="mr-2 h-5 w-5" />
@@ -176,189 +354,14 @@ export default function LandingPage() {
                                     </Link>
                                 </Button>
                                 <Button size="lg" variant="outline" asChild className="text-lg px-8 py-6">
-                                    <a href="#features">
-                                        Explore Features
+                                    <a href="mailto:balarajr483@gmail.com">
+                                        Contact Sales
                                     </a>
                                 </Button>
                             </div>
-
-                            {/* Hero visual */}
-                            <div className="mt-16 relative opacity-0 animate-fadeIn" style={{ animationDelay: '400ms', animationFillMode: 'forwards' }}>
-                                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10" />
-                                <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-xl p-2 shadow-2xl">
-                                    <div className="rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 aspect-video flex items-center justify-center">
-                                        <div className="text-center">
-                                            <div className="flex items-center justify-center gap-4 mb-6">
-                                                <div className="h-16 w-16 rounded-2xl bg-primary/20 flex items-center justify-center">
-                                                    <Brain className="h-8 w-8 text-primary" />
-                                                </div>
-                                                <div className="h-12 w-12 rounded-xl bg-teal-500/20 flex items-center justify-center">
-                                                    <Activity className="h-6 w-6 text-teal-400" />
-                                                </div>
-                                                <div className="h-12 w-12 rounded-xl bg-rose-500/20 flex items-center justify-center">
-                                                    <Shield className="h-6 w-6 text-rose-400" />
-                                                </div>
-                                            </div>
-                                            <p className="text-muted-foreground">Interactive Dashboard Preview</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
-                    </div>
-                </section>
-
-                {/* Stats Section */}
-                <section className="py-16 px-6 border-y border-border/50 bg-muted/20">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                            {stats.map((stat, i) => (
-                                <div
-                                    key={stat.label}
-                                    className="text-center opacity-0 animate-slideUp"
-                                    style={{ animationDelay: `${i * 100}ms`, animationFillMode: 'forwards' }}
-                                >
-                                    <stat.icon className="h-8 w-8 text-primary mx-auto mb-3" />
-                                    <div className="text-4xl font-bold text-foreground mb-1">{stat.value}</div>
-                                    <div className="text-sm text-muted-foreground">{stat.label}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* Features Section */}
-                <section id="features" className="py-24 px-6">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="text-center mb-16">
-                            <Badge variant="outline" className="mb-4 text-primary border-primary/30">
-                                Platform Features
-                            </Badge>
-                            <h2 className="text-4xl font-bold mb-4">
-                                Everything You Need for
-                                <span className="text-primary"> Smarter Clinical Decisions</span>
-                            </h2>
-                            <p className="text-muted-foreground max-w-2xl mx-auto">
-                                Our multi-agent AI system orchestrates specialized agents to deliver comprehensive clinical insights.
-                            </p>
-                        </div>
-
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {features.map((feature, i) => (
-                                <Card
-                                    key={feature.title}
-                                    className="rounded-2xl card-hover-subtle opacity-0 animate-slideUp"
-                                    style={{ animationDelay: `${i * 100}ms`, animationFillMode: 'forwards' }}
-                                >
-                                    <CardContent className="p-6">
-                                        <div className={cn(
-                                            "flex h-12 w-12 items-center justify-center rounded-xl border border-border/50 mb-4",
-                                            feature.bgColor
-                                        )}>
-                                            <feature.icon className={cn("h-6 w-6", feature.color)} />
-                                        </div>
-                                        <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-                                        <p className="text-sm text-muted-foreground leading-relaxed">
-                                            {feature.description}
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* Security Section */}
-                <section id="security" className="py-24 px-6 bg-muted/20">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="grid lg:grid-cols-2 gap-12 items-center">
-                            <div>
-                                <Badge variant="outline" className="mb-4 text-primary border-primary/30">
-                                    Enterprise Security
-                                </Badge>
-                                <h2 className="text-4xl font-bold mb-6">
-                                    Built for Healthcare
-                                    <span className="text-primary"> Compliance</span>
-                                </h2>
-                                <p className="text-muted-foreground mb-8">
-                                    HealthMesh is designed from the ground up with healthcare compliance and security in mind.
-                                    Your patient data is protected by enterprise-grade security measures.
-                                </p>
-
-                                <div className="space-y-4">
-                                    {[
-                                        { icon: Lock, title: "HIPAA Compliant", desc: "Full compliance with HIPAA Privacy and Security Rules" },
-                                        { icon: Shield, title: "SOC 2 Type II", desc: "Audited security controls and processes" },
-                                        { icon: Award, title: "ISO 27001", desc: "Information security management certification" },
-                                        { icon: Building2, title: "Enterprise SSO", desc: "Microsoft Entra ID integration for secure access" },
-                                    ].map((item, i) => (
-                                        <div key={item.title} className="flex items-start gap-4">
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
-                                                <item.icon className="h-5 w-5 text-primary" />
-                                            </div>
-                                            <div>
-                                                <h4 className="font-semibold">{item.title}</h4>
-                                                <p className="text-sm text-muted-foreground">{item.desc}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-teal-500/20 rounded-3xl blur-3xl" />
-                                <Card className="relative rounded-3xl">
-                                    <CardContent className="p-8">
-                                        <div className="flex items-center gap-4 mb-6">
-                                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-sky-400 flex items-center justify-center">
-                                                <Lock className="h-7 w-7 text-white" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-xl font-bold">Zero Trust Architecture</h3>
-                                                <p className="text-sm text-muted-foreground">Enterprise-grade security</p>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-3">
-                                            {["End-to-end encryption", "Role-based access control", "Audit logging", "Data anonymization"].map((item) => (
-                                                <div key={item} className="flex items-center gap-3">
-                                                    <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                                                    <span className="text-sm">{item}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* CTA Section */}
-                <section className="py-24 px-6">
-                    <div className="max-w-4xl mx-auto text-center">
-                        <h2 className="text-4xl font-bold mb-6">
-                            Ready to Transform Your
-                            <span className="text-primary"> Clinical Workflow?</span>
-                        </h2>
-                        <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-                            Join leading healthcare organizations using HealthMesh to improve patient outcomes
-                            and support clinical decision-making with AI.
-                        </p>
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <Button size="lg" asChild className="glow-cta text-lg px-8 py-6">
-                                <Link href="/login">
-                                    <Stethoscope className="mr-2 h-5 w-5" />
-                                    Request Demo
-                                </Link>
-                            </Button>
-                            <Button size="lg" variant="outline" asChild className="text-lg px-8 py-6">
-                                <a href="mailto:balarajr483@gmail.com">
-                                    Contact Sales
-                                </a>
-                            </Button>
-                        </div>
-                    </div>
-                </section>
+                    </section>
+                </main>
 
                 {/* Footer */}
                 <footer className="border-t border-border/50 py-12 px-6">
@@ -379,7 +382,7 @@ export default function LandingPage() {
 
                             {/* Solutions */}
                             <div>
-                                <h4 className="font-semibold mb-4">Solutions</h4>
+                                <p className="font-semibold mb-4">Solutions</p>
                                 <ul className="space-y-2 text-sm text-muted-foreground">
                                     <li><Link href="/solutions" className="hover:text-foreground transition-colors">Clinical Decision Support</Link></li>
                                     <li><Link href="/solutions" className="hover:text-foreground transition-colors">Medication Safety</Link></li>
@@ -390,7 +393,7 @@ export default function LandingPage() {
 
                             {/* Company */}
                             <div>
-                                <h4 className="font-semibold mb-4">Company</h4>
+                                <p className="font-semibold mb-4">Company</p>
                                 <ul className="space-y-2 text-sm text-muted-foreground">
                                     <li><Link href="/about" className="hover:text-foreground transition-colors">About Us</Link></li>
                                     <li><Link href="/about" className="hover:text-foreground transition-colors">Careers</Link></li>
@@ -401,12 +404,12 @@ export default function LandingPage() {
 
                             {/* Legal */}
                             <div>
-                                <h4 className="font-semibold mb-4">Compliance</h4>
+                                <p className="font-semibold mb-4">Compliance</p>
                                 <ul className="space-y-2 text-sm text-muted-foreground">
                                     <li><a href="#security" className="hover:text-foreground transition-colors">HIPAA</a></li>
                                     <li><a href="#security" className="hover:text-foreground transition-colors">Security</a></li>
-                                    <li><a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
-                                    <li><a href="#" className="hover:text-foreground transition-colors">Terms of Service</a></li>
+                                    <li><Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
+                                    <li><Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
                                 </ul>
                             </div>
                         </div>
