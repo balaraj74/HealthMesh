@@ -10,35 +10,61 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { TopHeader } from "@/components/top-header";
 import { AuthProvider } from "@/auth/AuthProvider";
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
-import Login from "@/pages/login";
-import Signup from "@/pages/signup";
-import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/dashboard";
-import Cases from "@/pages/cases";
-import CaseNew from "@/pages/case-new";
-import CaseDetail from "@/pages/case-detail";
-import Patients from "@/pages/patients";
-import PatientNew from "@/pages/patient-new";
-import PatientDetail from "@/pages/patient-detail";
-import Labs from "@/pages/labs";
-import Orchestrator from "@/pages/orchestrator";
-import RiskSafety from "@/pages/risk-safety";
-import Chat from "@/pages/chat";
-import AuditLogs from "@/pages/audit";
-import Settings from "@/pages/settings";
-import QRScan from "@/pages/qr-scan";
-import EarlyDeterioration from "@/pages/early-deterioration";
-import MedicationSafety from "@/pages/medication-safety";
-import LabTrends from "@/pages/lab-trends";
+import { lazy, Suspense } from "react";
+
+// ============================================================================
+// LAZY LOADED PAGES - Code splitting for better performance
+// Only the landing page is loaded immediately, all other pages load on demand
+// ============================================================================
+
+// Landing page - loaded immediately for fast initial load
 import LandingPage from "@/pages/landing";
-import SolutionsPage from "@/pages/solutions";
-import PricingPage from "@/pages/pricing";
-import AboutPage from "@/pages/about";
-import BlogPage from "@/pages/blog";
-import BlogPostPage from "@/pages/blog-post";
-import ContactPage from "@/pages/contact";
-import PrivacyPolicy from "@/pages/privacy";
-import TermsOfService from "@/pages/terms";
+
+// Auth pages - lazy loaded
+const Login = lazy(() => import("@/pages/login"));
+const Signup = lazy(() => import("@/pages/signup"));
+const NotFound = lazy(() => import("@/pages/not-found"));
+
+// Marketing pages - lazy loaded
+const SolutionsPage = lazy(() => import("@/pages/solutions"));
+const PricingPage = lazy(() => import("@/pages/pricing"));
+const AboutPage = lazy(() => import("@/pages/about"));
+const BlogPage = lazy(() => import("@/pages/blog"));
+const BlogPostPage = lazy(() => import("@/pages/blog-post"));
+const ContactPage = lazy(() => import("@/pages/contact"));
+const PrivacyPolicy = lazy(() => import("@/pages/privacy"));
+const TermsOfService = lazy(() => import("@/pages/terms"));
+
+// Protected dashboard pages - lazy loaded
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const Cases = lazy(() => import("@/pages/cases"));
+const CaseNew = lazy(() => import("@/pages/case-new"));
+const CaseDetail = lazy(() => import("@/pages/case-detail"));
+const Patients = lazy(() => import("@/pages/patients"));
+const PatientNew = lazy(() => import("@/pages/patient-new"));
+const PatientDetail = lazy(() => import("@/pages/patient-detail"));
+const Labs = lazy(() => import("@/pages/labs"));
+const Orchestrator = lazy(() => import("@/pages/orchestrator"));
+const RiskSafety = lazy(() => import("@/pages/risk-safety"));
+const Chat = lazy(() => import("@/pages/chat"));
+const AuditLogs = lazy(() => import("@/pages/audit"));
+const Settings = lazy(() => import("@/pages/settings"));
+const QRScan = lazy(() => import("@/pages/qr-scan"));
+const EarlyDeterioration = lazy(() => import("@/pages/early-deterioration"));
+const MedicationSafety = lazy(() => import("@/pages/medication-safety"));
+const LabTrends = lazy(() => import("@/pages/lab-trends"));
+
+// Loading fallback for lazy loaded components
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="flex flex-col items-center gap-4">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <span className="text-sm text-muted-foreground">Loading...</span>
+      </div>
+    </div>
+  );
+}
 
 function Router() {
   return (
@@ -147,6 +173,15 @@ function Router() {
   );
 }
 
+// Wrap Router with Suspense for lazy loading
+function SuspendedRouter() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <Router />
+    </Suspense>
+  );
+}
+
 // Wrapper to conditionally render sidebar based on route
 function AppContent() {
   const [location] = useLocation();
@@ -160,7 +195,7 @@ function AppContent() {
 
   // Public pages: No sidebar, just the page content
   if (isPublicPage) {
-    return <Router />;
+    return <SuspendedRouter />;
   }
 
   // Protected pages: Full layout with sidebar
@@ -171,7 +206,7 @@ function AppContent() {
         <div className="flex flex-col flex-1 overflow-hidden">
           <TopHeader />
           <main className="flex-1 overflow-auto bg-background">
-            <Router />
+            <SuspendedRouter />
           </main>
         </div>
       </div>
