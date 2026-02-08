@@ -98,6 +98,36 @@ function updateLink(rel: string, href: string) {
  * Import and use these for consistent SEO across pages
  */
 export const pageSEO = {
+    home: {
+        title: 'AI-Powered Clinical Decision Support for Healthcare',
+        description: 'Enterprise healthcare AI platform providing explainable clinical decision support, medication safety, lab trend analysis, and FHIR interoperability. HIPAA compliant.',
+        keywords: 'clinical decision support, healthcare AI, medication safety, FHIR, HIPAA compliant, hospital AI',
+    },
+    solutions: {
+        title: 'Solutions',
+        description: 'Explore HealthMesh healthcare AI solutions: clinical decision support, medication safety, lab analysis, and more.',
+        keywords: 'healthcare solutions, clinical AI, hospital software, medical decision support',
+    },
+    pricing: {
+        title: 'Pricing',
+        description: 'Flexible pricing plans for healthcare AI platform. From small clinics to enterprise hospitals. Contact us for custom quotes.',
+        keywords: 'healthcare AI pricing, SaaS healthcare, clinical decision support cost',
+    },
+    about: {
+        title: 'About Us',
+        description: 'Meet the team behind HealthMesh. We are healthcare professionals and AI experts building the future of clinical decision support.',
+        keywords: 'about healthmesh, healthcare AI company, clinical AI team',
+    },
+    blog: {
+        title: 'Blog',
+        description: 'Insights on healthcare AI, clinical decision support, medication safety, and digital health transformation.',
+        keywords: 'healthcare AI blog, clinical AI insights, digital health articles',
+    },
+    contact: {
+        title: 'Contact Us',
+        description: 'Get in touch with HealthMesh. Request a demo, ask questions, or discuss custom solutions for your healthcare organization.',
+        keywords: 'contact healthmesh, healthcare AI demo, clinical AI inquiry',
+    },
     dashboard: {
         title: 'Clinical Dashboard',
         description: 'AI-powered clinical dashboard for healthcare decision support. Monitor patients, analyze cases, and receive intelligent alerts.',
@@ -118,10 +148,10 @@ export const pageSEO = {
         description: 'Sign in to HealthMesh clinical decision support platform. Enterprise healthcare AI for authorized medical professionals.',
         noindex: false, // Public page
     },
-    solutions: {
-        title: 'Solutions',
-        description: 'Explore HealthMesh healthcare AI solutions: clinical decision support, medication safety, lab analysis, and more.',
-        keywords: 'healthcare solutions, clinical AI, hospital software, medical decision support',
+    signup: {
+        title: 'Create Account',
+        description: 'Create a HealthMesh account to access AI-powered clinical decision support. For healthcare professionals only.',
+        noindex: false,
     },
     medicationSafety: {
         title: 'Medication Safety AI',

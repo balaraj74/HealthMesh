@@ -4,19 +4,16 @@
 User-agent: *
 Allow: /
 
-# Block internal app routes from indexing (authenticated areas)
+# Block API and internal routes
 Disallow: /api/
-Disallow: /admin/
-Disallow: /auth/
 Disallow: /_next/
-Disallow: /private/
 
 # Block session/token parameters
 Disallow: /*?sessionId=
 Disallow: /*?token=
 Disallow: /*?auth=
 
-# Block internal app pages (require authentication)
+# Block authenticated/protected app pages
 Disallow: /dashboard
 Disallow: /cases
 Disallow: /patients
@@ -31,19 +28,19 @@ Disallow: /medication-safety
 Disallow: /lab-trends
 Disallow: /risk-safety
 
-# Allow public pages
+# Explicitly allow public pages
+Allow: /
 Allow: /login
+Allow: /signup
 Allow: /solutions
-Allow: /features
 Allow: /pricing
 Allow: /about
 Allow: /blog
+Allow: /blog/*
 Allow: /contact
-Allow: /compliance
-Allow: /resources
 
 # Sitemap location
 Sitemap: https://healthmesh.azurewebsites.net/sitemap.xml
 
-# Crawl-delay for politeness (optional)
+# Crawl-delay for politeness
 Crawl-delay: 1

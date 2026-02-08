@@ -44,6 +44,35 @@ export default function BlogPostPage() {
 
     if (!post) return <NotFound />;
 
+    // Generate Article structured data for SEO
+    const articleSchema = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": post.title,
+        "description": post.excerpt,
+        "author": {
+            "@type": "Person",
+            "name": post.author,
+            "jobTitle": post.authorRole
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "HealthMesh",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://healthmesh.azurewebsites.net/logo.png"
+            }
+        },
+        "datePublished": post.date,
+        "dateModified": post.date,
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": `https://healthmesh.azurewebsites.net/blog/${post.slug}`
+        },
+        "articleSection": post.category,
+        "keywords": `healthcare AI, ${post.category.toLowerCase()}, clinical decision support`
+    };
+
     return (
         <>
             <SEO
@@ -51,6 +80,12 @@ export default function BlogPostPage() {
                 description={post.excerpt}
                 keywords={`healthcare AI, ${post.category.toLowerCase()}, healthmesh blog`}
                 type="article"
+            />
+
+            {/* Article Structured Data for Rich Search Results */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
             />
 
             <div className="min-h-screen bg-background text-foreground">
