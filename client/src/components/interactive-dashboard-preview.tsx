@@ -1,60 +1,68 @@
 /**
  * Interactive Dashboard Preview Component
  * 
- * A visually impressive, animated dashboard preview that showcases
- * the HealthMesh platform's capabilities on the landing page.
+ * A realistic preview of the HealthMesh Clinical Dashboard
+ * that showcases the actual platform layout and features.
  */
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
     Activity,
     AlertTriangle,
-    CheckCircle2,
-    Clock,
-    Heart,
-    Pill,
-    TrendingUp,
-    Users,
     Brain,
+    FileText,
+    FlaskConical,
+    Heart,
+    LayoutDashboard,
+    MessageSquare,
+    Settings,
     Shield,
     Stethoscope,
-    FileText,
+    Users,
+    Clipboard,
+    QrCode,
+    TrendingUp,
+    CheckCircle,
+    Clock,
+    Sparkles,
 } from "lucide-react";
 
-// Simulated patient data for the preview
-const patients = [
-    { id: 1, name: "Sarah M.", age: 67, risk: "high", status: "Critical", mrn: "MRN-2847" },
-    { id: 2, name: "John D.", age: 45, risk: "medium", status: "Stable", mrn: "MRN-1923" },
-    { id: 3, name: "Emily R.", age: 32, risk: "low", status: "Improving", mrn: "MRN-3651" },
+// Sidebar navigation items matching the real dashboard
+const sidebarItems = [
+    { icon: LayoutDashboard, label: "Dashboard", active: true },
+    { icon: Clipboard, label: "Cases" },
+    { icon: Users, label: "Patients" },
+    { icon: FileText, label: "Lab Reports" },
+    { icon: QrCode, label: "QR Scan" },
 ];
 
-// Simulated alerts
-const alerts = [
-    { type: "drug", message: "Drug interaction detected: Warfarin + Aspirin", severity: "high" },
-    { type: "lab", message: "Abnormal creatinine levels - Patient Sarah M.", severity: "medium" },
-    { type: "vitals", message: "Heart rate elevated - Room 302", severity: "low" },
+const aiAgents = [
+    { icon: Brain, label: "Agent Orchestrator" },
+    { icon: AlertTriangle, label: "Early Deterioration" },
+    { icon: Shield, label: "Medication Safety" },
+    { icon: TrendingUp, label: "Lab Trends" },
+    { icon: Shield, label: "Risk & Safety" },
+    { icon: MessageSquare, label: "Clinical Chat" },
 ];
 
-// Animated chart data points
-const chartPoints = [35, 45, 38, 52, 48, 55, 62, 58, 65, 72, 68, 75];
+// Agent orchestration cards
+const agentCards = [
+    { icon: Brain, name: "Orchestrator", subtitle: "AI Coordinator", status: "running", lastRun: "05:59 PM", confidence: 95.0, color: "primary" },
+    { icon: Stethoscope, name: "Patient Context", subtitle: "History & Vitals", status: "ready", lastRun: "06:03 PM", confidence: 92.3, color: "teal" },
+    { icon: FlaskConical, name: "Labs & Reports", subtitle: "Pathology Analysis", status: "ready", lastRun: "05:45 PM", confidence: 88.8, color: "amber" },
+    { icon: FileText, name: "Research", subtitle: "Clinical Guidelines", status: "ready", lastRun: "05:41 PM", confidence: 87.4, color: "purple" },
+    { icon: Shield, name: "Risk & Safety", subtitle: "Safety Checks", status: "ready", lastRun: "06:00 PM", confidence: 85.4, color: "rose" },
+    { icon: Heart, name: "Clinician", subtitle: "Human Interface", status: "ready", lastRun: "05:06 PM", confidence: 95.1, color: "emerald" },
+];
 
 export function InteractiveDashboardPreview() {
-    const [activeTab, setActiveTab] = useState<"overview" | "patients" | "alerts">("overview");
-    const [currentAlertIndex, setCurrentAlertIndex] = useState(0);
-    const [animatedValue, setAnimatedValue] = useState(0);
+    const [animatedConfidence, setAnimatedConfidence] = useState(0);
+    const [currentTime, setCurrentTime] = useState("06:05 PM");
 
-    // Rotate through alerts
+    // Animate AI confidence counter
     useEffect(() => {
-        const interval = setInterval(() => {
-            setCurrentAlertIndex((prev) => (prev + 1) % alerts.length);
-        }, 3000);
-        return () => clearInterval(interval);
-    }, []);
-
-    // Animate counter
-    useEffect(() => {
-        const target = 98.7;
+        const target = 64;
         const duration = 2000;
         const steps = 60;
         const increment = target / steps;
@@ -66,256 +74,272 @@ export function InteractiveDashboardPreview() {
                 current = target;
                 clearInterval(timer);
             }
-            setAnimatedValue(current);
+            setAnimatedConfidence(Math.round(current));
         }, duration / steps);
 
         return () => clearInterval(timer);
     }, []);
 
     return (
-        <div className="w-full rounded-xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-1 shadow-2xl">
+        <div className="w-full rounded-xl bg-[#0a1929] overflow-hidden shadow-2xl border border-white/10">
             {/* Window Chrome */}
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-[#0d2137] border-b border-white/10">
                 <div className="flex gap-1.5">
                     <div className="h-3 w-3 rounded-full bg-rose-500/80" />
                     <div className="h-3 w-3 rounded-full bg-amber-500/80" />
                     <div className="h-3 w-3 rounded-full bg-emerald-500/80" />
                 </div>
                 <div className="flex-1 text-center">
-                    <span className="text-xs text-white/50 font-mono">healthmesh.azurewebsites.net/dashboard</span>
+                    <span className="text-[10px] text-white/40 font-mono">healthmesh.azurewebsites.net/dashboard</span>
                 </div>
             </div>
 
-            {/* Dashboard Content */}
-            <div className="p-4">
-                {/* Tab Navigation */}
-                <div className="flex gap-2 mb-4">
-                    {[
-                        { id: "overview", icon: Activity, label: "Overview" },
-                        { id: "patients", icon: Users, label: "Patients" },
-                        { id: "alerts", icon: AlertTriangle, label: "Alerts" },
-                    ].map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === tab.id
-                                    ? "bg-primary text-white shadow-lg shadow-primary/30"
-                                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80"
-                                }`}
-                        >
-                            <tab.icon className="h-3.5 w-3.5" />
-                            {tab.label}
-                        </button>
-                    ))}
+            <div className="flex">
+                {/* Sidebar */}
+                <div className="w-[140px] bg-[#0d2137] border-r border-white/10 p-3 hidden md:block">
+                    {/* Logo */}
+                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/10">
+                        <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-primary to-cyan-400 flex items-center justify-center">
+                            <Heart className="h-3.5 w-3.5 text-white" />
+                        </div>
+                        <span className="text-[10px] font-semibold text-white">
+                            Health<span className="text-primary">Mesh</span>
+                        </span>
+                    </div>
+
+                    {/* Clinical Section */}
+                    <div className="mb-3">
+                        <span className="text-[8px] uppercase tracking-wider text-white/30 mb-1 block">Clinical</span>
+                        {sidebarItems.map((item) => (
+                            <div
+                                key={item.label}
+                                className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-[9px] mb-0.5 ${item.active
+                                        ? "bg-primary text-white"
+                                        : "text-white/50 hover:text-white/70"
+                                    }`}
+                            >
+                                <item.icon className="h-3 w-3" />
+                                {item.label}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* AI Decision Support Section */}
+                    <div>
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-[8px] uppercase tracking-wider text-white/30">AI Decision Support</span>
+                            <span className="text-[7px] px-1 py-0.5 rounded bg-cyan-500/20 text-cyan-400">BETA</span>
+                        </div>
+                        {aiAgents.slice(0, 4).map((item) => (
+                            <div
+                                key={item.label}
+                                className="flex items-center gap-2 px-2 py-1.5 text-[9px] text-white/50"
+                            >
+                                <item.icon className="h-3 w-3" />
+                                <span className="truncate">{item.label}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
-                <AnimatePresence mode="wait">
-                    {activeTab === "overview" && (
-                        <motion.div
-                            key="overview"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="space-y-4"
-                        >
-                            {/* Stats Row */}
-                            <div className="grid grid-cols-4 gap-3">
-                                {[
-                                    { icon: Users, label: "Active Patients", value: "247", color: "text-primary" },
-                                    { icon: Brain, label: "AI Analyses", value: "1,284", color: "text-purple-400" },
-                                    { icon: Shield, label: "Alerts Resolved", value: "98%", color: "text-emerald-400" },
-                                    { icon: Clock, label: "Avg Response", value: "< 2min", color: "text-amber-400" },
-                                ].map((stat, i) => (
-                                    <motion.div
-                                        key={stat.label}
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: i * 0.1 }}
-                                        className="bg-white/5 rounded-lg p-3 border border-white/10"
-                                    >
-                                        <stat.icon className={`h-4 w-4 ${stat.color} mb-2`} />
-                                        <div className="text-lg font-bold text-white">{stat.value}</div>
-                                        <div className="text-[10px] text-white/50">{stat.label}</div>
-                                    </motion.div>
-                                ))}
+                {/* Main Content */}
+                <div className="flex-1 p-4">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <LayoutDashboard className="h-4 w-4 text-primary" />
+                                <h1 className="text-sm font-semibold text-white">Clinical Dashboard</h1>
                             </div>
+                            <p className="text-[9px] text-white/40 mt-0.5">Caring for patients with intelligent support</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[8px] text-white/40">Updated {currentTime}</span>
+                            <button className="text-[9px] px-3 py-1.5 bg-primary text-white rounded-md flex items-center gap-1">
+                                <Sparkles className="h-3 w-3" />
+                                New Case
+                            </button>
+                        </div>
+                    </div>
 
-                            {/* Chart and AI Panel */}
-                            <div className="grid grid-cols-2 gap-3">
-                                {/* Chart */}
-                                <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <span className="text-xs text-white/70">Patient Outcomes</span>
-                                        <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
-                                    </div>
-                                    <div className="h-20 flex items-end gap-1">
-                                        {chartPoints.map((point, i) => (
-                                            <motion.div
-                                                key={i}
-                                                initial={{ height: 0 }}
-                                                animate={{ height: `${point}%` }}
-                                                transition={{ delay: i * 0.05, duration: 0.5 }}
-                                                className="flex-1 bg-gradient-to-t from-primary/50 to-primary rounded-t"
-                                            />
-                                        ))}
-                                    </div>
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-4 gap-2 mb-4">
+                        {[
+                            { label: "TOTAL CASES", value: "6", change: "+12%", icon: Clipboard, color: "primary" },
+                            { label: "ACTIVE CASES", value: "0", icon: Activity, color: "teal" },
+                            { label: "PENDING REVIEWS", value: "6", icon: Clock, color: "amber" },
+                            { label: "CRITICAL ALERTS", value: "0", icon: AlertTriangle, color: "rose" },
+                        ].map((stat, i) => (
+                            <motion.div
+                                key={stat.label}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                                className="bg-[#0d2137] rounded-lg p-2.5 border border-white/10"
+                            >
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[8px] text-white/40 uppercase">{stat.label}</span>
+                                    <stat.icon className={`h-4 w-4 ${stat.color === "primary" ? "text-primary" :
+                                            stat.color === "teal" ? "text-teal-400" :
+                                                stat.color === "amber" ? "text-amber-400" : "text-rose-400"
+                                        }`} />
                                 </div>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-lg font-bold text-white">{stat.value}</span>
+                                    {stat.change && (
+                                        <span className="text-[8px] px-1.5 py-0.5 rounded bg-primary/20 text-primary">{stat.change}</span>
+                                    )}
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
 
-                                {/* AI Insight */}
-                                <div className="bg-gradient-to-br from-primary/20 to-purple-500/20 rounded-lg p-3 border border-primary/30">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Brain className="h-4 w-4 text-primary animate-pulse" />
-                                        <span className="text-xs font-medium text-white">AI Insight</span>
-                                    </div>
-                                    <p className="text-[10px] text-white/70 leading-relaxed">
-                                        Based on current vitals profile, patient Sarah M. shows
-                                        elevated risk for cardiac event. Recommend immediate
-                                        cardiology consult.
-                                    </p>
-                                    <div className="flex gap-2 mt-2">
-                                        <button className="text-[9px] px-2 py-1 bg-primary/30 text-primary rounded hover:bg-primary/40 transition-colors">
-                                            View Details
-                                        </button>
-                                        <button className="text-[9px] px-2 py-1 bg-white/10 text-white/70 rounded hover:bg-white/20 transition-colors">
-                                            Dismiss
-                                        </button>
-                                    </div>
-                                </div>
+                    {/* Agent Orchestration */}
+                    <div className="mb-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                                <Brain className="h-3.5 w-3.5 text-white/70" />
+                                <span className="text-[10px] font-medium text-white">Agent Orchestration</span>
                             </div>
-                        </motion.div>
-                    )}
-
-                    {activeTab === "patients" && (
-                        <motion.div
-                            key="patients"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="space-y-2"
-                        >
-                            {patients.map((patient, i) => (
+                            <span className="text-[8px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center gap-1">
+                                <CheckCircle className="h-2.5 w-2.5" />
+                                System Healthy
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                            {agentCards.map((agent, i) => (
                                 <motion.div
-                                    key={patient.id}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: i * 0.1 }}
-                                    className="flex items-center gap-3 bg-white/5 rounded-lg p-3 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
+                                    key={agent.name}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 0.3 + i * 0.1 }}
+                                    className="bg-[#0d2137] rounded-lg p-2 border border-white/10"
                                 >
-                                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${patient.risk === "high" ? "bg-rose-500/20" :
-                                            patient.risk === "medium" ? "bg-amber-500/20" : "bg-emerald-500/20"
-                                        }`}>
-                                        <Stethoscope className={`h-5 w-5 ${patient.risk === "high" ? "text-rose-400" :
-                                                patient.risk === "medium" ? "text-amber-400" : "text-emerald-400"
-                                            }`} />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm font-medium text-white">{patient.name}</span>
-                                            <span className="text-[10px] text-white/40">{patient.mrn}</span>
+                                    <div className="flex items-start justify-between mb-1.5">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className={`h-5 w-5 rounded-md flex items-center justify-center ${agent.color === "primary" ? "bg-primary/20" :
+                                                    agent.color === "teal" ? "bg-teal-500/20" :
+                                                        agent.color === "amber" ? "bg-amber-500/20" :
+                                                            agent.color === "purple" ? "bg-purple-500/20" :
+                                                                agent.color === "rose" ? "bg-rose-500/20" : "bg-emerald-500/20"
+                                                }`}>
+                                                <agent.icon className={`h-2.5 w-2.5 ${agent.color === "primary" ? "text-primary" :
+                                                        agent.color === "teal" ? "text-teal-400" :
+                                                            agent.color === "amber" ? "text-amber-400" :
+                                                                agent.color === "purple" ? "text-purple-400" :
+                                                                    agent.color === "rose" ? "text-rose-400" : "text-emerald-400"
+                                                    }`} />
+                                            </div>
+                                            <div>
+                                                <div className="text-[9px] font-medium text-white">{agent.name}</div>
+                                                <div className="text-[7px] text-white/40">{agent.subtitle}</div>
+                                            </div>
                                         </div>
-                                        <div className="text-[10px] text-white/50">Age {patient.age} • {patient.status}</div>
+                                        <span className={`text-[7px] px-1 py-0.5 rounded ${agent.status === "running"
+                                                ? "bg-primary/20 text-primary animate-pulse"
+                                                : "bg-white/10 text-white/50"
+                                            }`}>
+                                            {agent.status === "running" ? "● Running" : "● Ready"}
+                                        </span>
                                     </div>
-                                    <div className={`text-[10px] px-2 py-1 rounded-full ${patient.risk === "high" ? "bg-rose-500/20 text-rose-300" :
-                                            patient.risk === "medium" ? "bg-amber-500/20 text-amber-300" : "bg-emerald-500/20 text-emerald-300"
-                                        }`}>
-                                        {patient.risk.charAt(0).toUpperCase() + patient.risk.slice(1)} Risk
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <div className="text-[7px] text-white/30">Last Run</div>
+                                            <div className="text-[8px] text-white/70">{agent.lastRun}</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-[7px] text-white/30">Confidence</div>
+                                            <div className={`text-[8px] font-medium ${agent.confidence >= 90 ? "text-emerald-400" :
+                                                    agent.confidence >= 85 ? "text-amber-400" : "text-rose-400"
+                                                }`}>{agent.confidence}%</div>
+                                        </div>
                                     </div>
                                 </motion.div>
                             ))}
-                        </motion.div>
-                    )}
-
-                    {activeTab === "alerts" && (
-                        <motion.div
-                            key="alerts"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="space-y-2"
-                        >
-                            {/* Drug Interaction Alert */}
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-3"
-                            >
-                                <div className="flex items-start gap-3">
-                                    <div className="h-8 w-8 rounded-lg bg-rose-500/20 flex items-center justify-center shrink-0">
-                                        <Pill className="h-4 w-4 text-rose-400" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-xs font-medium text-rose-300">Drug Interaction Warning</span>
-                                            <span className="text-[9px] px-1.5 py-0.5 bg-rose-500/30 text-rose-200 rounded">Critical</span>
-                                        </div>
-                                        <p className="text-[10px] text-white/60">
-                                            Potential interaction detected between Warfarin and Aspirin
-                                            for patient Sarah M. Risk of increased bleeding.
-                                        </p>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Lab Alert */}
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 0.1 }}
-                                className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3"
-                            >
-                                <div className="flex items-start gap-3">
-                                    <div className="h-8 w-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
-                                        <FileText className="h-4 w-4 text-amber-400" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-xs font-medium text-amber-300">Abnormal Lab Result</span>
-                                            <span className="text-[9px] px-1.5 py-0.5 bg-amber-500/30 text-amber-200 rounded">Medium</span>
-                                        </div>
-                                        <p className="text-[10px] text-white/60">
-                                            Creatinine: 2.1 mg/dL (Normal: 0.7-1.3).
-                                            Consider nephrology consult.
-                                        </p>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Vitals Alert */}
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 0.2 }}
-                                className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3"
-                            >
-                                <div className="flex items-start gap-3">
-                                    <div className="h-8 w-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
-                                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-xs font-medium text-emerald-300">Alert Resolved</span>
-                                            <span className="text-[9px] px-1.5 py-0.5 bg-emerald-500/30 text-emerald-200 rounded">Resolved</span>
-                                        </div>
-                                        <p className="text-[10px] text-white/60">
-                                            Heart rate normalized for patient in Room 302.
-                                            Vitals now within normal range.
-                                        </p>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Footer Status Bar */}
-                <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/10">
-                    <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-[10px] text-white/50">System Healthy</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <span className="text-[10px] text-white/40">AI Accuracy: <span className="text-emerald-400">{animatedValue.toFixed(1)}%</span></span>
-                        <span className="text-[10px] text-white/40">Last sync: Just now</span>
+
+                    {/* Recent Cases Table */}
+                    <div className="bg-[#0d2137] rounded-lg p-2.5 border border-white/10">
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                                <Clipboard className="h-3 w-3 text-white/70" />
+                                <span className="text-[10px] font-medium text-white">Recent Cases</span>
+                            </div>
+                            <span className="text-[8px] text-primary cursor-pointer hover:underline">View All</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2 text-[8px] text-white/40 uppercase mb-1 px-1">
+                            <span>Case ID</span>
+                            <span>Type</span>
+                            <span>Status</span>
+                            <span>Action</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2 text-[9px] text-white/70 px-1 py-1.5 bg-white/5 rounded">
+                            <span className="text-primary">#eab5635f</span>
+                            <span>Rare Disease</span>
+                            <span className="flex items-center gap-1">
+                                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                                Review Ready
+                            </span>
+                            <span className="text-white/40">→</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Sidebar */}
+                <div className="w-[160px] bg-[#0d2137] border-l border-white/10 p-3 hidden lg:block">
+                    {/* Risk & Safety */}
+                    <div className="mb-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Shield className="h-3.5 w-3.5 text-white/70" />
+                            <span className="text-[10px] font-medium text-white">Risk & Safety</span>
+                        </div>
+                        <div className="bg-[#0a1929] rounded-lg p-3 border border-white/10 text-center">
+                            <div className="h-8 w-8 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-2">
+                                <CheckCircle className="h-4 w-4 text-emerald-400" />
+                            </div>
+                            <div className="text-[9px] font-medium text-white">No active safety alerts</div>
+                            <div className="text-[8px] text-white/40 mt-0.5">System is running within normal safety parameters</div>
+                        </div>
+                    </div>
+
+                    {/* AI Confidence */}
+                    <div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <Sparkles className="h-3.5 w-3.5 text-white/70" />
+                            <span className="text-[10px] font-medium text-white">AI Confidence</span>
+                        </div>
+                        <div className="bg-[#0a1929] rounded-lg p-3 border border-white/10">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[8px] text-white/40">Average Score</span>
+                                <motion.span
+                                    className="text-lg font-bold text-primary"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                >
+                                    {animatedConfidence}%
+                                </motion.span>
+                            </div>
+                            {/* Progress bar */}
+                            <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-2">
+                                <motion.div
+                                    className="h-full bg-gradient-to-r from-primary to-cyan-400 rounded-full"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${animatedConfidence}%` }}
+                                    transition={{ duration: 2, ease: "easeOut" }}
+                                />
+                            </div>
+                            <div className="flex gap-1">
+                                <div className="flex-1 text-center py-1 bg-emerald-500/10 rounded text-[7px]">
+                                    <span className="text-emerald-400">High</span>
+                                    <div className="text-white/40">80-100%</div>
+                                </div>
+                                <div className="flex-1 text-center py-1 bg-amber-500/10 rounded text-[7px]">
+                                    <span className="text-amber-400">Medium</span>
+                                    <div className="text-white/40">50-79%</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
