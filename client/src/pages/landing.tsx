@@ -6,10 +6,16 @@
  */
 
 import { Link } from "wouter";
+import { lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SEO } from "@/components/seo";
+
+// Lazy load the dashboard preview to keep initial bundle small
+const InteractiveDashboardPreview = lazy(() =>
+    import("@/components/interactive-dashboard-preview").then(m => ({ default: m.InteractiveDashboardPreview }))
+);
 import {
     HeartPulse,
     Shield,
@@ -184,26 +190,20 @@ export default function LandingPage() {
                                     </Button>
                                 </div>
 
-                                {/* Hero visual */}
+                                {/* Hero visual - Interactive Dashboard Preview */}
                                 <div className="mt-16 relative opacity-0 animate-fadeIn" style={{ animationDelay: '400ms', animationFillMode: 'forwards' }}>
-                                    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10 pointer-events-none" />
                                     <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-xl p-2 shadow-2xl">
-                                        <div className="rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 aspect-video flex items-center justify-center">
-                                            <div className="text-center">
-                                                <div className="flex items-center justify-center gap-4 mb-6">
-                                                    <div className="h-16 w-16 rounded-2xl bg-primary/20 flex items-center justify-center">
-                                                        <Brain className="h-8 w-8 text-primary" />
-                                                    </div>
-                                                    <div className="h-12 w-12 rounded-xl bg-teal-500/20 flex items-center justify-center">
-                                                        <Activity className="h-6 w-6 text-teal-400" />
-                                                    </div>
-                                                    <div className="h-12 w-12 rounded-xl bg-rose-500/20 flex items-center justify-center">
-                                                        <Shield className="h-6 w-6 text-rose-400" />
-                                                    </div>
+                                        <Suspense fallback={
+                                            <div className="w-full rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-4 min-h-[300px] flex items-center justify-center">
+                                                <div className="flex flex-col items-center gap-4">
+                                                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                                                    <span className="text-sm text-white/50">Loading dashboard preview...</span>
                                                 </div>
-                                                <p className="text-muted-foreground">Interactive Dashboard Preview</p>
                                             </div>
-                                        </div>
+                                        }>
+                                            <InteractiveDashboardPreview />
+                                        </Suspense>
                                     </div>
                                 </div>
                             </div>
