@@ -638,3 +638,22 @@
 .stagger-6 {
     animation-delay: 0.3s;
 }
+
+/* Gradient text animation for landing page hero */
+@keyframes gradient {
+    0% {
+        background-position: 0% center;
+    }
+
+    50% {
+        background-position: 100% center;
+    }
+
+    100% {
+        background-position: 0% center;
+    }
+}
+
+.animate-gradient {
+    animation: gradient 4s ease-in-out infinite;
+}
